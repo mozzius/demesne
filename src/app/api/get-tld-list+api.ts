@@ -7,7 +7,10 @@ export async function GET(request: Request) {
   const result = await namecheap.call(Commands.DOMAINS_GETTLDLIST, {})
 
   return Response.json(
-    result.data.Tlds.Tld.map((tld: any) => tld.$.Name)
+    result.data.Tlds.Tld.sort(
+      (a: any, b: any) => b.$.SequenceNumber - a.$.SequenceNumber,
+    )
+      .map((tld: any) => tld.$.Name)
       // filter out bullshit handshake garbage
       .filter((tld: string | number) =>
         tlds.some((real) => String(tld).endsWith(real)),

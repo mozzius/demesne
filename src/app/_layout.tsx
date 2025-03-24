@@ -7,6 +7,7 @@ import {
 } from "@react-navigation/native"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
+import { Provider as PQueueProvider } from "#/lib/p-queue"
 import { Provider as TldListProvider } from "#/lib/tld-list"
 
 const coolLargeTitleEffect = {
@@ -29,18 +30,17 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
         <TldListProvider>
-          <Stack>
-            <Stack.Screen
-              name="index"
-              options={{
-                title: "Demesne",
-                ...coolLargeTitleEffect,
-                headerSearchBarOptions: {
-                  placeholder: "Find your next domain",
-                },
-              }}
-            />
-          </Stack>
+          <PQueueProvider>
+            <Stack>
+              <Stack.Screen
+                name="index"
+                options={{
+                  title: "Demesne",
+                  ...coolLargeTitleEffect,
+                }}
+              />
+            </Stack>
+          </PQueueProvider>
         </TldListProvider>
       </ThemeProvider>
     </QueryClientProvider>

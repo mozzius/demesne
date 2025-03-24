@@ -1,0 +1,12 @@
+diff --git a/package.json b/package.json
+index 543638ceb8cf7eb54b135daf47590e391ac3fce7..983c7d069cb19ab8606866812309bc15dfc20cf2 100644
+--- a/package.json
++++ b/package.json
+@@ -6,6 +6,7 @@
+ 	"repository": "sindresorhus/p-queue",
+ 	"funding": "https://github.com/sponsors/sindresorhus",
+ 	"type": "module",
++	"main": "./dist/index.js",
+ 	"exports": {
+ 		"types": "./dist/index.d.ts",
+ 		"default": "./dist/index.js"

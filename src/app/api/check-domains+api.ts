@@ -13,12 +13,12 @@ export async function GET(request: Request) {
 
   let domains = []
 
-  if (typeof result.data.DomainCheckResult === "object") {
-    domains = [result.data.DomainCheckResult.$]
-  } else {
+  if (Array.isArray(result.data.DomainCheckResult)) {
     domains = result.data.DomainCheckResult.map(
       (domain: { ["$"]: any }) => domain.$,
     )
+  } else {
+    domains = [result.data.DomainCheckResult.$]
   }
 
   return Response.json(checkDomainsSchema.parse({ domains }))

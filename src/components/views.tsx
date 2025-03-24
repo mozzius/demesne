@@ -1,6 +1,13 @@
 import { forwardRef, useMemo } from "react"
-import { Text as RNText, TextProps } from "react-native"
-import Animated, { AnimatedScrollViewProps } from "react-native-reanimated"
+import {
+  Text as RNText,
+  TextProps,
+  type FlatList as RNFlatList,
+} from "react-native"
+import Animated, {
+  AnimatedScrollViewProps,
+  FlatListPropsWithLayout,
+} from "react-native-reanimated"
 import { useTheme } from "@react-navigation/native"
 
 export const ScrollView = forwardRef<
@@ -16,6 +23,25 @@ export const ScrollView = forwardRef<
   )
 })
 
+function FlatListInner<T extends any>(
+  props: FlatListPropsWithLayout<T>,
+  ref: React.ForwardedRef<RNFlatList<T>>,
+) {
+  return (
+    <Animated.FlatList<T>
+      ref={ref}
+      contentInsetAdjustmentBehavior="automatic"
+      {...props}
+    />
+  )
+}
+
+export const FlatList = forwardRef(FlatListInner) as <T = any>(
+  props: FlatListPropsWithLayout<T> & {
+    ref?: React.ForwardedRef<RNFlatList<T>>
+  },
+) => React.ReactElement
+
 export function useTextColor(color: "primary" | "secondary" | "tertiary") {
   const theme = useTheme()
   let colorValue = theme.colors.text
@@ -30,10 +56,19 @@ export function useTextColor(color: "primary" | "secondary" | "tertiary") {
 export const Text = forwardRef<
   RNText,
   TextProps & {
-    color?: "primary" | "secondary" | "tertiary"
+    color?: "primary" | "secondary" | "tertiary" | (string & {})
   }
 >(({ color: colorProp = "primary", style, ...props }, ref) => {
-  const color = useTextColor(colorProp)
+  const isColorThemed =
+    colorProp === "primary" ||
+    colorProp === "secondary" ||
+    colorProp === "tertiary"
+  let color = useTextColor(
+    isColorThemed
+      ? (colorProp as "primary" | "secondary" | "tertiary")
+      : "primary",
+  )
+  if (!isColorThemed) color = colorProp
   const styleWithColor = useMemo(() => {
     return [{ color }, style]
   }, [color, style])

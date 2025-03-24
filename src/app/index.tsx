@@ -17,7 +17,7 @@ export default function Index() {
   const hasSearchQuery = searchText.length > 1
 
   return (
-    <ScrollView>
+    <>
       <Stack.Screen
         options={{
           headerSearchBarOptions: {
@@ -47,18 +47,20 @@ export default function Index() {
       ) : (
         <WelcomeEmptyState onGetStarted={() => ref.current?.focus()} />
       )}
-    </ScrollView>
+    </>
   )
 }
 
 function WelcomeEmptyState({ onGetStarted }: { onGetStarted: () => void }) {
   return (
-    <EmptyState
-      icon={CastleIcon}
-      text="Welcome to Demesne!"
-      subText="Your next domain awaits you."
-    >
-      <Button title="Get started" onPress={onGetStarted} />
-    </EmptyState>
+    <ScrollView>
+      <EmptyState
+        icon={CastleIcon}
+        text="Welcome to Demesne!"
+        subText="Your next domain awaits you."
+      >
+        <Button title="Start searching" onPress={onGetStarted} />
+      </EmptyState>
+    </ScrollView>
   )
 }

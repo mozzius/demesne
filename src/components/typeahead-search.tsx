@@ -3,7 +3,7 @@ import { useTheme } from "@react-navigation/native"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { SearchIcon } from "lucide-react-native"
 
-import { Text, useTextColor } from "#/components/views"
+import { ScrollView, Text, useTextColor } from "#/components/views"
 import { typeaheadSchema } from "#/lib/schemas"
 
 export function TypeaheadSearch({
@@ -27,55 +27,70 @@ export function TypeaheadSearch({
     placeholderData: keepPreviousData,
   })
 
+  let content
+
   if (input.length < 3) {
-    return null
-  }
-  switch (results.status) {
-    case "pending":
-      return (
-        <Text style={styles.resultText} color="tertiary">
-          Searching...
-        </Text>
-      )
-    case "error":
-      return (
-        <Text style={styles.resultText} color="primary">
-          Error: {results.error.message}
-        </Text>
-      )
-    case "success":
-      return (
-        <View style={styles.typeaheadContainer}>
-          {results.data.typeaheadSuggestions
-            .filter((s, i, a) => a.indexOf(s) === i)
-            .map((suggestion) => (
-              <TouchableHighlight
-                key={suggestion.domainName}
-                onPress={() => onPressSuggestion(suggestion.domainName)}
-              >
-                <View
-                  style={[
-                    styles.suggestion,
-                    {
-                      borderColor: tertiary,
-                      backgroundColor: theme.colors.background,
-                    },
-                  ]}
+    content = null
+  } else {
+    switch (results.status) {
+      case "pending": {
+        content = (
+          <Text style={styles.resultText} color="tertiary">
+            Searching...
+          </Text>
+        )
+        break
+      }
+      case "error": {
+        content = (
+          <Text style={styles.resultText} color="primary">
+            Error: {results.error.message}
+          </Text>
+        )
+        break
+      }
+      case "success": {
+        content = (
+          <View style={styles.typeaheadContainer}>
+            {results.data.typeaheadSuggestions
+              .filter((s, i, a) => a.indexOf(s) === i)
+              .map((suggestion) => (
+                <TouchableHighlight
+                  key={suggestion.domainName}
+                  onPress={() => onPressSuggestion(suggestion.domainName)}
                 >
-                  <SearchIcon size={16} color={primary} />
-                  <Text
-                    style={styles.suggestionText}
-                    color="primary"
-                    numberOfLines={1}
+                  <View
+                    style={[
+                      styles.suggestionOuter,
+                      { backgroundColor: theme.colors.background },
+                    ]}
                   >
-                    {suggestion.domainName}
-                  </Text>
-                </View>
-              </TouchableHighlight>
-            ))}
-        </View>
-      )
+                    <View
+                      style={[
+                        styles.suggestionInner,
+                        { borderColor: tertiary },
+                      ]}
+                    >
+                      <SearchIcon size={16} color={primary} />
+                      <Text
+                        style={styles.suggestionText}
+                        color="primary"
+                        numberOfLines={1}
+                      >
+                        {suggestion.domainName}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableHighlight>
+              ))}
+          </View>
+        )
+        break
+      }
+    }
   }
+
+  return <ScrollView>{content}</ScrollView>
 }
 
 const styles = StyleSheet.create({
@@ -88,13 +103,16 @@ const styles = StyleSheet.create({
   typeaheadContainer: {
     flex: 1,
   },
-  suggestion: {
+  suggestionOuter: {
+    paddingLeft: 20,
+  },
+  suggestionInner: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
+    gap: 8,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 8,
   },
   suggestionText: {
     fontSize: 16,

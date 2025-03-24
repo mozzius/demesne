@@ -35,6 +35,7 @@
     "expo-web-browser": "~14.0.2",
     "lucide-react-native": "^0.483.0",
     "namecheap-ts": "^1.0.5",
+    "p-queue": "^8.1.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.7",
@@ -61,5 +62,10 @@
     "typescript": "^5.3.3"
   },
   "private": true,
-  "packageManager": "pnpm@10.6.5+sha512.cdf928fca20832cd59ec53826492b7dc25dc524d4370b6b4adbf65803d32efaa6c1c88147c0ae4e8d579a6c9eec715757b50d4fa35eea179d868eada4ed043af"
+  "packageManager": "pnpm@10.6.5+sha512.cdf928fca20832cd59ec53826492b7dc25dc524d4370b6b4adbf65803d32efaa6c1c88147c0ae4e8d579a6c9eec715757b50d4fa35eea179d868eada4ed043af",
+  "pnpm": {
+    "patchedDependencies": {
+      "p-queue": "patches/p-queue.patch"
+    }
+  }
 }
