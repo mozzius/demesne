@@ -90,7 +90,7 @@ export function TypeaheadSearch({
     }
   }
 
-  return <ScrollView>{content}</ScrollView>
+  return <ScrollView keyboardDismissMode="interactive">{content}</ScrollView>
 }
 
 const styles = StyleSheet.create({
