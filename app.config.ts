@@ -11,6 +11,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
   ios: {
+    bundleIdentifier: "dev.mozzius.demesne",
     supportsTablet: true,
   },
   android: {
