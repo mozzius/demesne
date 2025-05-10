@@ -6,7 +6,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "demesne",
   version: "1.0.0",
   orientation: "portrait",
-  icon: "./assets/images/icon.png",
+  icon: "./assets/images/demesne.png",
   scheme: "demesne",
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
@@ -18,9 +18,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
+    edgeToEdgeEnabled: true,
     adaptiveIcon: {
-      foregroundImage: "./assets/images/adaptive-icon.png",
-      backgroundColor: "#ffffff",
+      foregroundImage: "./assets/images/demesne-nobg.png",
+      backgroundColor: "#4DA5C1",
     },
   },
   web: {
@@ -45,6 +46,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         imageWidth: 200,
         resizeMode: "contain",
         backgroundColor: "#ffffff",
+      },
+    ],
+    [
+      "expo-secure-store",
+      {
+        configureAndroidBackup: true,
+        faceIDPermission:
+          "Allow Demesne to access your Face ID biometric data.",
       },
     ],
   ],

@@ -42,13 +42,17 @@ export const FlatList = forwardRef(FlatListInner) as <T = any>(
   },
 ) => React.ReactElement
 
-export function useTextColor(color: "primary" | "secondary" | "tertiary") {
+export function useTextColor(
+  color: "primary" | "secondary" | "tertiary" | "accent",
+) {
   const theme = useTheme()
   let colorValue = theme.colors.text
   if (color === "secondary") {
     colorValue = theme.dark ? "#999" : "#777"
   } else if (color === "tertiary") {
     colorValue = theme.dark ? "#666" : "#aaa"
+  } else if (color === "accent") {
+    colorValue = theme.colors.primary
   }
   return colorValue
 }
@@ -56,16 +60,17 @@ export function useTextColor(color: "primary" | "secondary" | "tertiary") {
 export const Text = forwardRef<
   RNText,
   TextProps & {
-    color?: "primary" | "secondary" | "tertiary" | (string & {})
+    color?: "primary" | "secondary" | "tertiary" | "accent" | (string & {})
   }
 >(({ color: colorProp = "primary", style, ...props }, ref) => {
   const isColorThemed =
     colorProp === "primary" ||
     colorProp === "secondary" ||
-    colorProp === "tertiary"
+    colorProp === "tertiary" ||
+    colorProp === "accent"
   let color = useTextColor(
     isColorThemed
-      ? (colorProp as "primary" | "secondary" | "tertiary")
+      ? (colorProp as "primary" | "secondary" | "tertiary" | "accent")
       : "primary",
   )
   if (!isColorThemed) color = colorProp
