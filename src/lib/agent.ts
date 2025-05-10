@@ -24,7 +24,7 @@ export async function resolvePDS(identifier: string) {
   return { did, pds }
 }
 
-type DidDocument = {
+export type DidDocument = {
   "@context": string[]
   id: string
   alsoKnownAs?: string[]
