@@ -13,9 +13,8 @@ export function Button({
     <Pressable
       style={(state) => [
         styles.button,
-        {
-          backgroundColor: theme.colors.primary,
-        },
+        { backgroundColor: theme.colors.primary },
+        props.disabled && styles.disabled,
         typeof style === "function" ? style(state) : style,
       ]}
       {...props}
@@ -40,5 +39,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 500,
     textAlign: "center",
+  },
+  disabled: {
+    filter: [{ brightness: 0.75 }],
   },
 })

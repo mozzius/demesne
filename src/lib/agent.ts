@@ -1,25 +1,18 @@
 import { Agent, CredentialSession } from "@atproto/api"
 
-const PLC_DIRECTORY = "https://plc.directory"
-
 const publicAgent = new Agent({
   service: "https://public.api.bsky.app",
 })
 
-export async function resolvePDS(handleOrDid: string) {
-  let did
-  if (handleOrDid.startsWith("did:")) {
-    did = handleOrDid
-  } else {
-    const res = await publicAgent.resolveHandle({ handle: handleOrDid })
-    did = res.data.did
+export async function resolvePDS(identifier: string) {
+  const res = await publicAgent.com.atproto.identity.resolveIdentity({
+    identifier,
+  })
+  if (!res.success) {
+    throw new Error("Could not resolve identity")
   }
-  let didDoc: DidDocument
-  if (did.startsWith("did:plc:")) {
-    didDoc = await fetch(`${PLC_DIRECTORY}/${did}`).then((res) => res.json())
-  } else {
-    throw new Error("Unsupported DID method")
-  }
+  const did = res.data.did
+  const didDoc = res.data.didDoc as DidDocument
   const pds = didDoc.service?.findLast(
     (s) => s.type === "AtprotoPersonalDataServer",
   )?.serviceEndpoint

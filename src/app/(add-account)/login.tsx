@@ -11,7 +11,6 @@ import {
 import Animated, {
   FadeIn,
   FadeOut,
-  FadingTransition,
   LayoutAnimationConfig,
   LinearTransition,
 } from "react-native-reanimated"
@@ -20,10 +19,9 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context"
 import { Stack, useRouter } from "expo-router"
-import { Agent } from "@atproto/api"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useTheme } from "@react-navigation/native"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { CircleCheckIcon, XIcon } from "lucide-react-native"
 
 import { Button } from "#/components/button"
@@ -31,7 +29,7 @@ import { useSheetCloseButton } from "#/components/header-buttons"
 import { ScrollView, Text, useTextColor } from "#/components/views"
 import { createAgentWithSession, resolvePDS } from "#/lib/agent"
 
-import { useAgent, useSetAgent } from "./_layout"
+import { useSetAgent } from "./_layout"
 
 export default function LoginScreen() {
   const headerLeft = useSheetCloseButton("Cancel")
@@ -41,7 +39,6 @@ export default function LoginScreen() {
   const theme = useTheme()
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
-  const [loginError, setLoginError] = useState(false)
   const frame = useSafeAreaFrame()
   const insets = useSafeAreaInsets()
 
@@ -62,23 +59,22 @@ export default function LoginScreen() {
     },
   })
 
-  const onPressNext = useCallback(async () => {
-    router.push("/(add-account)/manage-keys")
-    if (isDebouncing || !handleResolution?.pds) return
-    try {
-      setLoginError(false)
-      const agent = await createAgentWithSession(
-        new URL(handleResolution.pds),
-        identifier,
-        password,
-      )
+  const {
+    isPending: isLoginPending,
+    mutate: loginMutate,
+    isError: isLoginError,
+  } = useMutation({
+    mutationKey: ["login", identifier, password],
+    mutationFn: async ({ pds }: { pds: string }) => {
+      return await createAgentWithSession(new URL(pds), identifier, password)
+    },
+    onSuccess: (agent) => {
       setAgent(agent)
       router.push("/(add-account)/manage-keys")
-    } catch (err) {
-      console.error(err)
-      setLoginError(true)
-    }
-  }, [identifier, password, router, isDebouncing, handleResolution?.pds])
+      setIdentifier("")
+      setPassword("")
+    },
+  })
 
   const topUnsafeArea = insets.top + 10 + headerHeight
 
@@ -137,7 +133,7 @@ export default function LoginScreen() {
                     onChangeText={setPassword}
                   />
                 </Animated.View>
-                {loginError && (
+                {isLoginError && (
                   <Animated.View
                     layout={LinearTransition}
                     entering={FadeIn}
@@ -155,7 +151,21 @@ export default function LoginScreen() {
                 )}
               </View>
               <View>
-                <Button onPress={onPressNext} title="Next" />
+                <Button
+                  onPress={() =>
+                    handleResolution &&
+                    loginMutate({
+                      pds: handleResolution.pds,
+                    })
+                  }
+                  title="Next"
+                  disabled={
+                    isDebouncing ||
+                    isLoginPending ||
+                    !handleResolution ||
+                    password.length < 1
+                  }
+                />
               </View>
             </View>
           </LayoutAnimationConfig>
@@ -194,10 +204,19 @@ function HandleResolutionStatus({
   data,
 }: {
   isLoading: boolean
-  data: any
+  data?: { pds: string }
   isError: boolean
 }) {
   if (data) {
+    let prettyUrl = data.pds
+    try {
+      const urlp = new URL(data.pds)
+      prettyUrl = urlp.hostname
+      if (urlp.hostname.endsWith(".host.bsky.network")) {
+        const mushroom = urlp.hostname.split(".", 1)[0]
+        prettyUrl = "🦋 " + mushroom[0].toLocaleUpperCase() + mushroom.slice(1)
+      }
+    } catch {}
     return (
       <>
         <CircleCheckIcon color="white" size={20} />
@@ -206,7 +225,7 @@ function HandleResolutionStatus({
           style={styles.handleResolutionText}
           numberOfLines={1}
         >
-          PDS found: todo
+          PDS found: {prettyUrl}
         </Text>
       </>
     )
