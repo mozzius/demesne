@@ -5,6 +5,7 @@ import {
   TextInput as RNTextInput,
   StyleSheet,
   TextInputProps,
+  TouchableOpacity,
   useColorScheme,
   View,
 } from "react-native"
@@ -49,6 +50,7 @@ export default function LoginScreen() {
     isLoading,
     data: handleResolution,
     isError,
+    refetch: retryResolution,
   } = useQuery({
     enabled:
       debouncedIdentifier.startsWith("did:") ||
@@ -122,6 +124,7 @@ export default function LoginScreen() {
                       isLoading={isLoading}
                       data={handleResolution}
                       isError={isError}
+                      retry={retryResolution}
                     />
                   </Animated.View>
                 )}
@@ -202,10 +205,12 @@ function HandleResolutionStatus({
   isLoading,
   isError,
   data,
+  retry,
 }: {
   isLoading: boolean
   data?: { pds: string }
   isError: boolean
+  retry: () => void
 }) {
   if (data) {
     let prettyUrl = data.pds
@@ -247,6 +252,11 @@ function HandleResolutionStatus({
         <Text color="white" style={styles.handleResolutionText}>
           Could not find PDS
         </Text>
+        <TouchableOpacity onPress={retry}>
+          <Text color="white" style={styles.handleResolutionText}>
+            Retry
+          </Text>
+        </TouchableOpacity>
       </>
     )
   }
