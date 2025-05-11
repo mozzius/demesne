@@ -214,9 +214,10 @@ function HandleResolutionStatus({
     try {
       const urlp = new URL(data.pds)
       prettyUrl = urlp.hostname
+      // todo (decentralisation)
       if (urlp.hostname.endsWith(".host.bsky.network")) {
         const mushroom = urlp.hostname.split(".", 1)[0]
-        prettyUrl = "🦋 " + mushroom[0].toLocaleUpperCase() + mushroom.slice(1)
+        prettyUrl = `bsky.social (${mushroom})`
       }
     } catch {}
     return (
