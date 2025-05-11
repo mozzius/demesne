@@ -1,27 +1,50 @@
 import { Agent, CredentialSession } from "@atproto/api"
+import { useQuery } from "@tanstack/react-query"
+
+const PLC_DIRECTORY = "https://plc.directory"
 
 const publicAgent = new Agent({
   service: "https://public.api.bsky.app",
 })
 
-export async function resolvePDS(identifier: string) {
-  const res = await publicAgent.com.atproto.identity.resolveIdentity({
-    identifier,
+export function useIdentityQuery(
+  identifier: string,
+  { enabled } = { enabled: true },
+) {
+  return useQuery({
+    queryKey: ["identity", identifier],
+    queryFn: async () => {
+      let did
+
+      if (identifier.startsWith("did:plc:")) {
+        did = identifier
+      } else if (identifier.startsWith("did:")) {
+        throw new Error("Unsupported DID method")
+      } else {
+        const res = await publicAgent.resolveHandle({
+          handle: identifier,
+        })
+        did = res.data.did
+      }
+
+      const plcData: PlcData = await fetch(`${PLC_DIRECTORY}/${did}/data`).then(
+        (res) => res.json(),
+      )
+
+      const pds = plcData.services?.atproto_pds?.endpoint
+
+      if (!pds) {
+        throw new Error("Found DID doc, but it had no associated PDS")
+      }
+
+      return {
+        did,
+        plcData,
+        pds,
+      }
+    },
+    enabled,
   })
-  if (!res.success) {
-    throw new Error("Could not resolve identity")
-  }
-  const did = res.data.did
-  const didDoc = res.data.didDoc as DidDocument
-  const pds = didDoc.service?.findLast(
-    (s) => s.type === "AtprotoPersonalDataServer",
-  )?.serviceEndpoint
-
-  if (!pds) {
-    throw new Error("Found DID doc, but it had no associated PDS")
-  }
-
-  return { did, pds }
 }
 
 export type DidDocument = {
@@ -35,6 +58,23 @@ export type DidDocument = {
     publicKeyMultibase?: string
   }[]
   service?: { id: string; type: string; serviceEndpoint: string }[]
+}
+
+export type PlcData = {
+  did: string
+  verificationMethods?: {
+    atproto?: "did:key:zQ3shhB2yHGn8JbXPAYX6LcEBrWo1nALhWLGa11YBqU2zB9Sm"
+    [key: string]: unknown
+  }
+  rotationKeys: string[]
+  alsoKnownAs: string[]
+  services?: {
+    atproto_pds?: {
+      type: "AtprotoPersonalDataServer"
+      endpoint: "https://amanita.us-east.host.bsky.network"
+    }
+    [key: string]: unknown
+  }
 }
 
 export async function createAgentWithSession(

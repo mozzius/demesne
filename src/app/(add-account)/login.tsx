@@ -28,7 +28,7 @@ import { CircleCheckIcon, XIcon } from "lucide-react-native"
 import { Button } from "#/components/button"
 import { useSheetCloseButton } from "#/components/header-buttons"
 import { ScrollView, Text, useTextColor } from "#/components/views"
-import { createAgentWithSession, resolvePDS } from "#/lib/agent"
+import { createAgentWithSession, useIdentityQuery } from "#/lib/agent"
 
 import { useSetAgent } from "./_layout"
 
@@ -48,17 +48,13 @@ export default function LoginScreen() {
 
   const {
     isLoading,
-    data: handleResolution,
+    data: identity,
     isError,
     refetch: retryResolution,
-  } = useQuery({
+  } = useIdentityQuery(debouncedIdentifier, {
     enabled:
       debouncedIdentifier.startsWith("did:") ||
       isProbablyHandle(debouncedIdentifier),
-    queryKey: ["resolve-pds", debouncedIdentifier],
-    queryFn: async () => {
-      return await resolvePDS(debouncedIdentifier)
-    },
   })
 
   const {
@@ -106,7 +102,7 @@ export default function LoginScreen() {
                   onChangeText={setIdentifier}
                   autoCorrect={false}
                 />
-                {(isLoading || handleResolution || isError) && (
+                {(isLoading || identity || isError) && (
                   <Animated.View
                     layout={LinearTransition}
                     entering={FadeIn}
@@ -122,7 +118,7 @@ export default function LoginScreen() {
                   >
                     <HandleResolutionStatus
                       isLoading={isLoading}
-                      data={handleResolution}
+                      data={identity}
                       isError={isError}
                       retry={retryResolution}
                     />
@@ -156,16 +152,16 @@ export default function LoginScreen() {
               <View>
                 <Button
                   onPress={() =>
-                    handleResolution &&
+                    identity &&
                     loginMutate({
-                      pds: handleResolution.pds,
+                      pds: identity.pds,
                     })
                   }
                   title="Next"
                   disabled={
                     isDebouncing ||
                     isLoginPending ||
-                    !handleResolution ||
+                    !identity ||
                     password.length < 1
                   }
                 />
