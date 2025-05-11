@@ -83,6 +83,7 @@ export default function LoginScreen() {
         contentContainerStyle={{
           minHeight: frame.height - topUnsafeArea - insets.bottom,
         }}
+        keyboardShouldPersistTaps="handled"
       >
         {/* todo: use rnkc for smooth animation */}
         <KeyboardAvoidingView
