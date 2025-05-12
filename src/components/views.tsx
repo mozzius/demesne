@@ -10,18 +10,14 @@ import Animated, {
 } from "react-native-reanimated"
 import { useTheme } from "@react-navigation/native"
 
-export const ScrollView = forwardRef<
-  Animated.ScrollView,
-  AnimatedScrollViewProps
->((props, ref) => {
+export function ScrollView(props: AnimatedScrollViewProps) {
   return (
     <Animated.ScrollView
-      ref={ref}
       contentInsetAdjustmentBehavior="automatic"
       {...props}
     />
   )
-})
+}
 
 function FlatListInner<T extends any>(
   props: FlatListPropsWithLayout<T>,
@@ -57,12 +53,13 @@ export function useTextColor(
   return colorValue
 }
 
-export const Text = forwardRef<
-  RNText,
-  TextProps & {
-    color?: "primary" | "secondary" | "tertiary" | "accent" | (string & {})
-  }
->(({ color: colorProp = "primary", style, ...props }, ref) => {
+export function Text({
+  color: colorProp = "primary",
+  style,
+  ...props
+}: TextProps & {
+  color?: "primary" | "secondary" | "tertiary" | "accent" | (string & {})
+}) {
   const isColorThemed =
     colorProp === "primary" ||
     colorProp === "secondary" ||
@@ -77,5 +74,5 @@ export const Text = forwardRef<
   const styleWithColor = useMemo(() => {
     return [{ color }, style]
   }, [color, style])
-  return <RNText ref={ref} style={styleWithColor} {...props} />
-})
+  return <RNText style={styleWithColor} {...props} />
+}

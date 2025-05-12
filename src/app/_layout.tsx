@@ -7,7 +7,8 @@ import {
 } from "@react-navigation/native"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
-import { coolLargeTitleEffect } from "#/components/header"
+import { coolLargeTitleEffect, coolTitleEffect } from "#/components/header"
+import { AccountProvider } from "#/lib/accounts"
 
 export const unstable_settings = {
   initialRouteName: "index",
@@ -19,25 +20,35 @@ export default function RootLayout() {
   const scheme = useColorScheme()
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen
-            name="index"
-            options={{
-              title: "Demesne",
-              ...coolLargeTitleEffect,
-            }}
-          />
-          <Stack.Screen
-            name="(add-account)"
-            options={{
-              headerShown: false,
-              presentation: "modal",
-            }}
-          />
-        </Stack>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
+      <QueryClientProvider client={queryClient}>
+        <AccountProvider>
+          <Stack>
+            <Stack.Screen
+              name="index"
+              options={{
+                title: "Demesne",
+                ...coolLargeTitleEffect,
+              }}
+            />
+            <Stack.Screen
+              name="account/[did]"
+              options={{
+                headerShown: false,
+                presentation: "modal",
+              }}
+            />
+            <Stack.Screen
+              name="login"
+              options={{
+                title: "Sign in",
+                presentation: "modal",
+                ...coolTitleEffect,
+              }}
+            />
+          </Stack>
+        </AccountProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   )
 }

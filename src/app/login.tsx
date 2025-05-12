@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  TextInput as RNTextInput,
   StyleSheet,
-  TextInputProps,
+  TextInput,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from "react-native"
 import Animated, {
@@ -22,26 +20,27 @@ import {
 import { Stack, useRouter } from "expo-router"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useTheme } from "@react-navigation/native"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { CircleCheckIcon, XIcon } from "lucide-react-native"
 
 import { Button } from "#/components/button"
 import { useSheetCloseButton } from "#/components/header-buttons"
-import { ScrollView, Text, useTextColor } from "#/components/views"
-import { createAgentWithSession, useIdentityQuery } from "#/lib/agent"
-
-import { useSetAgent } from "./_layout"
+import { InputGroup, TextField } from "#/components/text-field"
+import { ScrollView, Text } from "#/components/views"
+import { useCreateSession } from "#/lib/accounts"
+import { useIdentityQuery } from "#/lib/agent"
 
 export default function LoginScreen() {
   const headerLeft = useSheetCloseButton("Cancel")
   const headerHeight = useHeaderHeight()
   const router = useRouter()
-  const setAgent = useSetAgent()
   const theme = useTheme()
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const frame = useSafeAreaFrame()
   const insets = useSafeAreaInsets()
+  const ref = useRef<TextInput>(null)
+  const login = useCreateSession()
 
   const debouncedIdentifier = useDebouncedValue(identifier, 500)
   const isDebouncing = identifier !== debouncedIdentifier
@@ -64,13 +63,10 @@ export default function LoginScreen() {
   } = useMutation({
     mutationKey: ["login", identifier, password],
     mutationFn: async ({ pds }: { pds: string }) => {
-      return await createAgentWithSession(new URL(pds), identifier, password)
+      return await login(new URL(pds), identifier, password)
     },
-    onSuccess: (agent) => {
-      setAgent(agent)
-      router.push("/(add-account)/manage-keys")
-      setIdentifier("")
-      setPassword("")
+    onSuccess: () => {
+      router.dismiss()
     },
   })
 
@@ -93,8 +89,8 @@ export default function LoginScreen() {
         >
           <LayoutAnimationConfig skipExiting skipEntering>
             <View style={styles.container}>
-              <View style={styles.inputGroup}>
-                <TextInput
+              <InputGroup>
+                <TextField
                   placeholder="Handle"
                   autoComplete="username"
                   autoCapitalize="none"
@@ -102,6 +98,8 @@ export default function LoginScreen() {
                   value={identifier}
                   onChangeText={setIdentifier}
                   autoCorrect={false}
+                  onSubmitEditing={() => ref.current?.focus()}
+                  returnKeyType="next"
                 />
                 {(isLoading || identity || isError) && (
                   <Animated.View
@@ -126,11 +124,19 @@ export default function LoginScreen() {
                   </Animated.View>
                 )}
                 <Animated.View layout={LinearTransition}>
-                  <TextInput
+                  <TextField
                     placeholder="Password"
                     secureTextEntry
                     value={password}
                     onChangeText={setPassword}
+                    ref={ref}
+                    onSubmitEditing={() =>
+                      identity &&
+                      loginMutate({
+                        pds: identity.pds,
+                      })
+                    }
+                    returnKeyType="done"
                   />
                 </Animated.View>
                 {isLoginError && (
@@ -149,7 +155,7 @@ export default function LoginScreen() {
                     </Text>
                   </Animated.View>
                 )}
-              </View>
+              </InputGroup>
               <View>
                 <Button
                   onPress={() =>
@@ -172,29 +178,6 @@ export default function LoginScreen() {
         </KeyboardAvoidingView>
       </ScrollView>
     </>
-  )
-}
-
-function TextInput({ style, ...props }: React.PropsWithRef<TextInputProps>) {
-  const scheme = useColorScheme() || "default"
-  const theme = useTheme()
-  const primary = useTextColor("primary")
-  const tertiary = useTextColor("tertiary")
-
-  return (
-    <RNTextInput
-      style={[
-        styles.textInput,
-        {
-          color: primary,
-          backgroundColor: theme.colors.card,
-        },
-        style,
-      ]}
-      {...props}
-      keyboardAppearance={scheme}
-      placeholderTextColor={tertiary}
-    />
   )
 }
 
@@ -294,18 +277,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     justifyContent: "space-between",
   },
-  inputGroup: {
-    gap: 4,
-    borderRadius: 12,
-    borderCurve: "continuous",
-    overflow: "hidden",
-  },
-  textInput: {
-    fontSize: 16,
-    padding: 14,
-    borderRadius: 4,
-    borderCurve: "continuous",
-  },
   handleResolutionCard: {
     flex: 1,
     flexDirection: "row",
@@ -320,8 +291,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: 500,
-  },
-  inputAccessoryView: {
-    paddingHorizontal: 20,
   },
 })

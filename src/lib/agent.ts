@@ -1,9 +1,9 @@
-import { Agent, CredentialSession } from "@atproto/api"
+import { Agent } from "@atproto/api"
 import { useQuery } from "@tanstack/react-query"
 
 const PLC_DIRECTORY = "https://plc.directory"
 
-const publicAgent = new Agent({
+export const publicAgent = new Agent({
   service: "https://public.api.bsky.app",
 })
 
@@ -75,18 +75,4 @@ export type PlcData = {
     }
     [key: string]: unknown
   }
-}
-
-export async function createAgentWithSession(
-  service: URL,
-  identifier: string,
-  password: string,
-) {
-  const session = new CredentialSession(service)
-  const res = await session.login({
-    identifier,
-    password,
-  })
-  if (!res.success) throw new Error("Sign in failed")
-  return new Agent(session)
 }

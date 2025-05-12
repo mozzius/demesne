@@ -1,10 +1,11 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native"
-import { Redirect } from "expo-router"
+import { Link, Redirect, Stack } from "expo-router"
 import { Agent } from "@atproto/api"
 import { useTheme } from "@react-navigation/native"
 import { useQuery } from "@tanstack/react-query"
 
 import { Button } from "#/components/button"
+import { useSheetCloseButton } from "#/components/header-buttons"
 import { ScrollView, Text } from "#/components/views"
 import { useIdentityQuery } from "#/lib/agent"
 
@@ -12,12 +13,18 @@ import { useAgent } from "./_layout"
 
 export default function ManageKeysScreen() {
   const agent = useAgent()
+  const headerRight = useSheetCloseButton("Done", "bold")
 
   if (!agent || !agent.sessionManager.did) {
-    return <Redirect href="/(add-account)/login" />
+    return <Redirect href="/" />
   }
 
-  return <KeyManagement did={agent.sessionManager.did} agent={agent} />
+  return (
+    <>
+      <Stack.Screen options={{ headerRight }} />
+      <KeyManagement did={agent.sessionManager.did} agent={agent} />
+    </>
+  )
 }
 
 function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
@@ -38,7 +45,10 @@ function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
       {identity && recommendedCredentials ? (
         <>
           {identity?.plcData.rotationKeys?.map((key, i) => (
-            <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+            <View
+              style={[styles.card, { backgroundColor: theme.colors.card }]}
+              key={key}
+            >
               <View style={styles.row}>
                 <Text style={styles.bold}>Key #{i + 1}</Text>
 
@@ -58,7 +68,9 @@ function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
               </View>
             </View>
           ))}
-          <Button title="Add additional key" />
+          <Link asChild href="./add-key">
+            <Button title="Add additional key" />
+          </Link>
         </>
       ) : (
         <ActivityIndicator />

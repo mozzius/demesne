@@ -34,6 +34,15 @@ export default function AddAccountLayout() {
                 title: "Manage keys",
               }}
             />
+            <Stack.Screen
+              name="add-key"
+              options={{
+                title: "Add rotation key",
+                presentation: "formSheet",
+                sheetAllowedDetents: [0.5],
+                sheetGrabberVisible: true,
+              }}
+            />
           </Stack>
         </SetAgentContext>
       </AgentContext>

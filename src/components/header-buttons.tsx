@@ -26,7 +26,7 @@ export function useSheetCloseButton(title?: string, bold?: "bold") {
     } else {
       return null
     }
-  }, [router, title])
+  }, [router, title, bold])
 }
 
 const styles = StyleSheet.create({
