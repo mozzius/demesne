@@ -23,12 +23,6 @@ export default function AddAccountLayout() {
         <SetAgentContext value={setAgent}>
           <Stack screenOptions={coolTitleEffect}>
             <Stack.Screen
-              name="login"
-              options={{
-                title: "Add account",
-              }}
-            />
-            <Stack.Screen
               name="manage-keys"
               options={{
                 title: "Manage keys",
