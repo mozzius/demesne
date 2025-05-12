@@ -6,10 +6,6 @@ import { Agent } from "@atproto/api"
 
 import { coolTitleEffect } from "#/components/header"
 
-export const unstable_settings = {
-  initialRouteName: "login",
-}
-
 const AgentContext = createContext<Agent | null>(null)
 const SetAgentContext = createContext<(agent: Agent) => void>(() => {})
 
