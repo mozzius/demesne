@@ -15,6 +15,8 @@ export function Button({
         styles.button,
         { backgroundColor: theme.colors.primary },
         props.disabled && styles.disabled,
+        state.hovered && styles.hovered,
+        state.pressed && styles.pressed,
         typeof style === "function" ? style(state) : style,
       ]}
       {...props}
@@ -42,5 +44,11 @@ const styles = StyleSheet.create({
   },
   disabled: {
     filter: [{ brightness: 0.75 }],
+  },
+  hovered: {
+    filter: [{ brightness: 1.05 }],
+  },
+  pressed: {
+    filter: [{ brightness: 1.1 }],
   },
 })
