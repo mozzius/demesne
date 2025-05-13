@@ -27,7 +27,7 @@ export default function RootLayout() {
             <Stack.Screen
               name="index"
               options={{
-                title: "Demesne",
+                title: "My Accounts",
                 ...coolLargeTitleEffect,
               }}
             />
