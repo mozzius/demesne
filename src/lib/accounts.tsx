@@ -126,25 +126,15 @@ export function AccountProvider({ children }: { children?: React.ReactNode }) {
         new URL(account.serviceUrl),
         undefined,
         (evt, data) => {
-          switch (evt) {
-            case "update": {
-              const newAccountData = accounts.map((acc) => {
-                if (acc.did === did) {
-                  return {
-                    ...acc,
-                    session: data,
-                  }
-                } else {
-                  return acc
-                }
-              })
-
-              queryClient.setQueryData(["accounts"], newAccountData)
-              AsyncStorage.setItem(
-                ASYNC_STORAGE_KEY,
-                JSON.stringify(newAccountData),
-              )
-            }
+          if (evt === "update" && data) {
+            const newAccountData = accounts.map((acc) =>
+              acc.did === did ? { ...acc, session: data } : acc,
+            )
+            queryClient.setQueryData(["accounts"], newAccountData)
+            AsyncStorage.setItem(
+              ASYNC_STORAGE_KEY,
+              JSON.stringify(newAccountData),
+            )
           }
         },
       )
