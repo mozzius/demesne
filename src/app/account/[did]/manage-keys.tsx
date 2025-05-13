@@ -68,9 +68,11 @@ function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
               </View>
             </View>
           ))}
-          <Link asChild href="./add-key">
-            <Button title="Add additional key" />
-          </Link>
+          {identity && identity.plcData.rotationKeys.length < 10 && (
+            <Link asChild href="./add-key">
+              <Button title="Add additional key" />
+            </Link>
+          )}
         </>
       ) : (
         <ActivityIndicator />
