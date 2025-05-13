@@ -166,12 +166,8 @@ export default function LoginScreen() {
                     })
                   }
                   title="Next"
-                  disabled={
-                    isDebouncing ||
-                    isLoginPending ||
-                    !identity ||
-                    password.length < 1
-                  }
+                  loading={isLoginPending}
+                  disabled={isDebouncing || !identity || password.length < 1}
                 />
               </View>
             </View>
