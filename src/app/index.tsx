@@ -1,6 +1,8 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native"
+import { useState } from "react"
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
 import { Image } from "expo-image"
-import { Link } from "expo-router"
+import { Link, useRouter } from "expo-router"
+import { AppBskyActorDefs } from "@atproto/api"
 import { useTheme } from "@react-navigation/native"
 import { useQuery } from "@tanstack/react-query"
 import { CastleIcon } from "lucide-react-native"
@@ -8,12 +10,10 @@ import { CastleIcon } from "lucide-react-native"
 import { Button } from "#/components/button"
 import { EmptyState } from "#/components/empty-state"
 import { ScrollView, Text } from "#/components/views"
-import { useAccounts } from "#/lib/accounts"
+import { Account, useAccounts, useResumeSession } from "#/lib/accounts"
 import { publicAgent } from "#/lib/agent"
 
 export default function IndexScreen() {
-  const theme = useTheme()
-
   const accounts = useAccounts()
 
   const dids = accounts?.map((x) => x.did) ?? []
@@ -38,31 +38,11 @@ export default function IndexScreen() {
               (p) => p.did === account.did,
             )
             return (
-              <View
+              <AccountCard
                 key={account.did}
-                style={[styles.card, { backgroundColor: theme.colors.card }]}
-              >
-                {profile ? (
-                  <View style={styles.profileRow}>
-                    <Image style={styles.avi} source={profile.avatar} />
-                    <Text style={styles.handle}>{profile.handle}</Text>
-                  </View>
-                ) : (
-                  <View
-                    style={{
-                      height: 16,
-                      width: 150,
-                      backgroundColor: theme.colors.background,
-                      borderRadius: 4,
-                      marginVertical: 2,
-                    }}
-                  />
-                )}
-                <View
-                  style={[styles.line, { borderColor: theme.colors.border }]}
-                />
-                <Text color="secondary">{account.did}</Text>
-              </View>
+                account={account}
+                profile={profile}
+              />
             )
           })}
           <Link asChild href="/login">
@@ -81,6 +61,60 @@ export default function IndexScreen() {
         </EmptyState>
       )}
     </ScrollView>
+  )
+}
+
+function AccountCard({
+  account,
+  profile,
+}: {
+  account: Account
+  profile?: AppBskyActorDefs.ProfileViewDetailed
+}) {
+  const theme = useTheme()
+  const router = useRouter()
+  const resumeSession = useResumeSession()
+  const [isResuming, setIsResuming] = useState(false)
+
+  return (
+    <Pressable
+      style={[styles.card, { backgroundColor: theme.colors.card }]}
+      onPress={async () => {
+        if (account.agent) {
+          router.navigate(`/account/${account.did}/manage-keys`)
+        } else {
+          setIsResuming(true)
+          try {
+            await resumeSession(account.did)
+            router.navigate(`/account/${account.did}/manage-keys`)
+          } finally {
+            setIsResuming(false)
+          }
+        }
+      }}
+    >
+      {profile ? (
+        <View style={styles.profileRow}>
+          <Image style={styles.avi} source={profile.avatar} />
+          <Text style={styles.handle} numberOfLines={1}>
+            {profile.handle}
+          </Text>
+          {isResuming && <ActivityIndicator size="small" />}
+        </View>
+      ) : (
+        <View
+          style={{
+            height: 16,
+            width: 150,
+            backgroundColor: theme.colors.background,
+            borderRadius: 4,
+            marginVertical: 2,
+          }}
+        />
+      )}
+      <View style={[styles.line, { borderColor: theme.colors.border }]} />
+      <Text color="secondary">{account.did}</Text>
+    </Pressable>
   )
 }
 
@@ -119,6 +153,7 @@ const styles = StyleSheet.create({
   handle: {
     fontSize: 16,
     fontWeight: 500,
+    flex: 1,
   },
   key: {
     paddingHorizontal: 10,

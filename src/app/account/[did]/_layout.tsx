@@ -1,22 +1,29 @@
-import { createContext, use, useState } from "react"
+import { createContext, use } from "react"
 import { Platform } from "react-native"
 import { SystemBars } from "react-native-edge-to-edge"
-import { Stack } from "expo-router"
+import { Redirect, Stack, useLocalSearchParams } from "expo-router"
 import { Agent } from "@atproto/api"
 
 import { coolTitleEffect } from "#/components/header"
+import { useAccounts } from "#/lib/accounts"
 
 const AgentContext = createContext<Agent | null>(null)
-const SetAgentContext = createContext<(agent: Agent) => void>(() => {})
 
 export default function AddAccountLayout() {
-  const [agent, setAgent] = useState<Agent | null>(null)
+  const { did } = useLocalSearchParams<{ did: string }>()
+  const accounts = useAccounts()
 
-  return (
-    <>
-      {Platform.OS === "ios" && <SystemBars style={{ statusBar: "light" }} />}
-      <AgentContext value={agent}>
-        <SetAgentContext value={setAgent}>
+  const agent = accounts?.find((acc) => acc.did === did)?.agent
+
+  if (!agent) {
+    return <Redirect href="../" />
+  }
+
+  if (accounts)
+    return (
+      <>
+        {Platform.OS === "ios" && <SystemBars style={{ statusBar: "light" }} />}
+        <AgentContext value={agent}>
           <Stack screenOptions={coolTitleEffect}>
             <Stack.Screen
               name="manage-keys"
@@ -34,16 +41,11 @@ export default function AddAccountLayout() {
               }}
             />
           </Stack>
-        </SetAgentContext>
-      </AgentContext>
-    </>
-  )
+        </AgentContext>
+      </>
+    )
 }
 
 export function useAgent() {
   return use(AgentContext)
-}
-
-export function useSetAgent() {
-  return use(SetAgentContext)
 }
