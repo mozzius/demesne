@@ -95,6 +95,11 @@ function AccountCard({
           try {
             await resumeSession(account.did)
             router.navigate(`/account/${account.did}/manage-keys`)
+          } catch (err) {
+            console.error(err)
+            router.navigate(
+              profile ? `/login?handle=${profile.handle}` : "/login",
+            )
           } finally {
             setIsResuming(false)
           }

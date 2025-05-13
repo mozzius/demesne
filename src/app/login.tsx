@@ -17,7 +17,7 @@ import {
   useSafeAreaFrame,
   useSafeAreaInsets,
 } from "react-native-safe-area-context"
-import { Stack, useRouter } from "expo-router"
+import { Stack, useLocalSearchParams, useRouter } from "expo-router"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useTheme } from "@react-navigation/native"
 import { useMutation } from "@tanstack/react-query"
@@ -31,11 +31,12 @@ import { useCreateSession } from "#/lib/accounts"
 import { useIdentityQuery } from "#/lib/agent"
 
 export default function LoginScreen() {
+  const { handle } = useLocalSearchParams<{ handle?: string }>()
   const headerLeft = useSheetCloseButton("Cancel")
   const headerHeight = useHeaderHeight()
   const router = useRouter()
   const theme = useTheme()
-  const [identifier, setIdentifier] = useState("")
+  const [identifier, setIdentifier] = useState(handle ?? "")
   const [password, setPassword] = useState("")
   const frame = useSafeAreaFrame()
   const insets = useSafeAreaInsets()
