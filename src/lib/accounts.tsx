@@ -122,14 +122,39 @@ export function AccountProvider({ children }: { children?: React.ReactNode }) {
       const account = accounts.find((acc) => acc.did === did)
       if (!account) throw new Error("cannot find account to resume session for")
       if (!account.session) throw new Error("account has no saved session")
-      const session = new CredentialSession(new URL(account.serviceUrl))
+      const session = new CredentialSession(
+        new URL(account.serviceUrl),
+        undefined,
+        (evt, data) => {
+          switch (evt) {
+            case "update": {
+              const newAccountData = accounts.map((acc) => {
+                if (acc.did === did) {
+                  return {
+                    ...acc,
+                    session: data,
+                  }
+                } else {
+                  return acc
+                }
+              })
+
+              queryClient.setQueryData(["accounts"], newAccountData)
+              AsyncStorage.setItem(
+                ASYNC_STORAGE_KEY,
+                JSON.stringify(newAccountData),
+              )
+            }
+          }
+        },
+      )
       const res = await session.resumeSession(account.session)
 
       if (!res.success) throw new Error("session resume failed")
 
       setAgents((oldAgents) => ({ ...oldAgents, [did]: new Agent(session) }))
     },
-    [accounts],
+    [accounts, queryClient],
   )
 
   const removeAccount = useCallback(
