@@ -4,13 +4,19 @@ import { Image } from "expo-image"
 import { Link, useRouter } from "expo-router"
 import { AppBskyActorDefs } from "@atproto/api"
 import { useTheme } from "@react-navigation/native"
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { CastleIcon } from "lucide-react-native"
 
 import { Button } from "#/components/button"
 import { EmptyState } from "#/components/empty-state"
 import { ScrollView, Text } from "#/components/views"
-import { Account, useAccounts, useResumeSession } from "#/lib/accounts"
+import {
+  Account,
+  useAccounts,
+  useRemoveAccount,
+  useResumeSession,
+} from "#/lib/accounts"
+import { showActionSheet } from "#/lib/action-sheet"
 import { publicAgent } from "#/lib/agent"
 
 export default function IndexScreen() {
@@ -23,6 +29,7 @@ export default function IndexScreen() {
       const res = await publicAgent.getProfiles({ actors: dids })
       return res.data
     },
+    placeholderData: keepPreviousData,
   })
 
   return (
@@ -74,6 +81,7 @@ function AccountCard({
   const theme = useTheme()
   const router = useRouter()
   const resumeSession = useResumeSession()
+  const removeAccount = useRemoveAccount()
   const [isResuming, setIsResuming] = useState(false)
 
   return (
@@ -90,6 +98,20 @@ function AccountCard({
           } finally {
             setIsResuming(false)
           }
+        }
+      }}
+      onLongPress={async () => {
+        if (
+          await showActionSheet({
+            options: [
+              {
+                item: "Remove account",
+                destructive: true,
+              },
+            ],
+          })
+        ) {
+          removeAccount(account.did)
         }
       }}
     >
