@@ -35,6 +35,9 @@ const ResumeSessionContext = createContext<(did: string) => Promise<void>>(() =>
   Promise.resolve(),
 )
 const RemoveAccountContext = createContext<(did: string) => void>(() => {})
+const SaveKeyContext = createContext<(did: string, key: string) => void>(
+  () => {},
+)
 
 export function AccountProvider({ children }: { children?: React.ReactNode }) {
   const [agents, setAgents] = useState<Record<string, Agent>>({})
@@ -162,12 +165,29 @@ export function AccountProvider({ children }: { children?: React.ReactNode }) {
     [accounts, queryClient],
   )
 
+  const saveKey = useCallback(
+    async (did: string, key: string) => {
+      if (!accounts) throw new Error("account data not yet loaded")
+
+      const newAccountData = accounts.map((acc) =>
+        acc.did === did ? { ...acc, localKeys: [...acc.localKeys, key] } : acc,
+      )
+
+      queryClient.setQueryData(["accounts"], newAccountData)
+      await AsyncStorage.setItem(
+        ASYNC_STORAGE_KEY,
+        JSON.stringify(newAccountData),
+      )
+    },
+    [accounts, queryClient],
+  )
+
   return (
     <AccountContext value={value}>
       <CreateSessionContext value={createSession}>
         <ResumeSessionContext value={resumeSession}>
           <RemoveAccountContext value={removeAccount}>
-            {children}
+            <SaveKeyContext value={saveKey}>{children}</SaveKeyContext>
           </RemoveAccountContext>
         </ResumeSessionContext>
       </CreateSessionContext>
@@ -189,4 +209,8 @@ export function useResumeSession() {
 
 export function useRemoveAccount() {
   return use(RemoveAccountContext)
+}
+
+export function useSaveKey() {
+  return use(SaveKeyContext)
 }

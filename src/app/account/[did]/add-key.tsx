@@ -9,6 +9,7 @@ import base64 from "base64-js"
 import { Button } from "#/components/button"
 import { InputGroup, TextField } from "#/components/text-field"
 import { ScrollView, Text } from "#/components/views"
+import { useSaveKey } from "#/lib/accounts"
 import { useIdentityQuery } from "#/lib/agent"
 
 import { useAgent } from "./_layout"
@@ -20,6 +21,7 @@ export default function AddKeyScreen() {
   const queryClient = useQueryClient()
   const { did } = useLocalSearchParams<{ did: string }>()
   const { data: identity } = useIdentityQuery(did)
+  const saveKey = useSaveKey()
 
   const { mutate: createKey, isPending: isCreating } = useMutation({
     mutationFn: async () => {
@@ -43,8 +45,11 @@ export default function AddKeyScreen() {
       await agent.com.atproto.identity.submitPlcOperation({
         operation: signedOp.data.operation,
       })
+
+      return pubkey
     },
-    onSuccess: () => {
+    onSuccess: (key) => {
+      saveKey(did, key)
       queryClient.invalidateQueries({ queryKey: ["identity"] })
       router.dismiss()
     },
