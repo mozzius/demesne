@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { Button } from "#/components/button"
 import { useSheetCloseButton } from "#/components/header-buttons"
 import { ScrollView, Text } from "#/components/views"
+import { useAccounts } from "#/lib/accounts"
 import { useIdentityQuery } from "#/lib/agent"
 
 import { useAgent } from "./_layout"
@@ -30,6 +31,9 @@ export default function ManageKeysScreen() {
 function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
   const theme = useTheme()
   const router = useRouter()
+  const accounts = useAccounts()
+
+  const account = accounts?.find((acc) => acc.did === did)
 
   const { data: identity } = useIdentityQuery(did)
 
@@ -61,12 +65,21 @@ function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
               <View style={styles.row}>
                 <Text style={styles.bold}>Key #{i + 1}</Text>
 
-                {recommendedCredentials.rotationKeys?.includes(key) && (
+                {account?.localKeys.includes(key) && (
                   <View
                     style={[
                       styles.badge,
                       { backgroundColor: theme.colors.primary },
                     ]}
+                  >
+                    <Text style={styles.badgeText} color="white">
+                      Stored on device
+                    </Text>
+                  </View>
+                )}
+                {recommendedCredentials.rotationKeys?.includes(key) && (
+                  <View
+                    style={[styles.badge, { borderColor: theme.colors.border }]}
                   >
                     <Text style={styles.badgeText}>PDS key</Text>
                   </View>
@@ -86,13 +99,20 @@ function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
           )}
         </>
       ) : (
-        <ActivityIndicator />
+        <View style={styles.spinner}>
+          <ActivityIndicator size="large" />
+        </View>
       )}
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
+  spinner: {
+    flex: 1,
+    paddingTop: 200,
+    alignItems: "center",
+  },
   container: {
     paddingHorizontal: 20,
     paddingVertical: 8,
@@ -125,9 +145,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderCurve: "continuous",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "transparent",
   },
   badgeText: {
-    color: "white",
     fontWeight: 500,
     fontSize: 12,
     lineHeight: 14,

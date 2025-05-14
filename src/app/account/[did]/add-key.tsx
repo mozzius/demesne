@@ -48,6 +48,9 @@ export default function AddKeyScreen() {
 
       return pubkey
     },
+    onError: (err) => {
+      console.error(err)
+    },
     onSuccess: (key) => {
       saveKey(did, key)
       queryClient.invalidateQueries({ queryKey: ["identity"] })
@@ -83,13 +86,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    justifyContent: "space-between",
+    paddingTop: 4,
+    paddingBottom: 150,
     gap: 12,
   },
   info: {
     paddingHorizontal: 12,
-    flex: 1,
     textAlign: "center",
   },
 })
