@@ -165,7 +165,7 @@ export default function LoginScreen() {
                       pds: identity.pds,
                     })
                   }
-                  title="Next"
+                  title="Sign in"
                   loading={isLoginPending}
                   disabled={isDebouncing || !identity || password.length < 1}
                 />

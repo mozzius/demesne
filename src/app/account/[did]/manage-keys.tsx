@@ -1,8 +1,8 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native"
-import { Link, Redirect, Stack } from "expo-router"
+import { Link, Redirect, Stack, useRouter } from "expo-router"
 import { Agent } from "@atproto/api"
 import { useTheme } from "@react-navigation/native"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 
 import { Button } from "#/components/button"
 import { useSheetCloseButton } from "#/components/header-buttons"
@@ -29,6 +29,7 @@ export default function ManageKeysScreen() {
 
 function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
   const theme = useTheme()
+  const router = useRouter()
 
   const { data: identity } = useIdentityQuery(did)
 
@@ -40,6 +41,14 @@ function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
       return res.data
     },
   })
+
+  const { mutate: addKey, isPending: isAddingKey } = useMutation({
+    mutationFn: async () => {
+      await agent.com.atproto.identity.requestPlcOperationSignature()
+    },
+    onSuccess: () => router.push(`/account/${did}/add-key`),
+  })
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {identity && recommendedCredentials ? (
@@ -69,9 +78,11 @@ function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
             </View>
           ))}
           {identity && identity.plcData.rotationKeys.length < 10 && (
-            <Link asChild href="./add-key">
-              <Button title="Add additional key" />
-            </Link>
+            <Button
+              title="Add additional key"
+              onPress={() => addKey()}
+              loading={isAddingKey}
+            />
           )}
         </>
       ) : (
