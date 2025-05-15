@@ -1,5 +1,13 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native"
-import { Link, Redirect, Stack, useRouter } from "expo-router"
+import {
+  ActivityIndicator,
+  Alert,
+  Share,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native"
+import { Redirect, Stack, useRouter } from "expo-router"
+import * as SecureStore from "expo-secure-store"
 import { Agent } from "@atproto/api"
 import { useTheme } from "@react-navigation/native"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -8,6 +16,7 @@ import { Button } from "#/components/button"
 import { useSheetCloseButton } from "#/components/header-buttons"
 import { ScrollView, Text } from "#/components/views"
 import { useAccounts } from "#/lib/accounts"
+import { showActionSheet } from "#/lib/action-sheet"
 import { useIdentityQuery } from "#/lib/agent"
 
 import { useAgent } from "./_layout"
@@ -66,16 +75,53 @@ function KeyManagement({ did, agent }: { did: string; agent: Agent }) {
                 <Text style={styles.bold}>Key #{i + 1}</Text>
 
                 {account?.localKeys.includes(key) && (
-                  <View
-                    style={[
-                      styles.badge,
-                      { backgroundColor: theme.colors.primary },
-                    ]}
+                  <TouchableOpacity
+                    onPress={async () => {
+                      const choice = await showActionSheet({
+                        options: [{ item: "Retrieve key" }],
+                      })
+                      if (choice?.item === "Retrieve key") {
+                        Alert.alert(
+                          "Be careful with your keys",
+                          "You are about to retrieve your private key. This can be really dangerous if anyone else gets their hands on it! Make sure you know what you're doing.",
+                          [
+                            {
+                              text: "Continue",
+                              style: "destructive",
+                              onPress: () => {
+                                const priv = SecureStore.getItem(
+                                  key.replace("did:key:", ""),
+                                  {
+                                    requireAuthentication: !__DEV__,
+                                  },
+                                )
+                                if (priv) {
+                                  Share.share({ message: priv })
+                                } else {
+                                  Alert.alert("Cannot find key!")
+                                }
+                              },
+                            },
+                            {
+                              text: "Cancel",
+                              style: "cancel",
+                            },
+                          ],
+                        )
+                      }
+                    }}
                   >
-                    <Text style={styles.badgeText} color="white">
-                      Stored on device
-                    </Text>
-                  </View>
+                    <View
+                      style={[
+                        styles.badge,
+                        { backgroundColor: theme.colors.primary },
+                      ]}
+                    >
+                      <Text style={styles.badgeText} color="white">
+                        Stored on device
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                 )}
                 {recommendedCredentials.rotationKeys?.includes(key) && (
                   <View

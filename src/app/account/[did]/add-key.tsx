@@ -33,7 +33,9 @@ export default function AddKeyScreen() {
       const pubkey = key.did()
       const privkey = base64.fromByteArray(await key.export())
 
-      SecureStore.setItemAsync(pubkey, privkey)
+      SecureStore.setItemAsync(pubkey.replace("did:key:", ""), privkey, {
+        requireAuthentication: !__DEV__,
+      })
 
       const rotationKeys = [pubkey, ...identity.plcData.rotationKeys]
 
