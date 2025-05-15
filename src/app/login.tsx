@@ -92,7 +92,7 @@ export default function LoginScreen() {
             <View style={styles.container}>
               <InputGroup>
                 <TextField
-                  placeholder="Handle"
+                  placeholder="Bluesky handle"
                   autoComplete="username"
                   autoCapitalize="none"
                   autoFocus

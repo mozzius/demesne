@@ -5,7 +5,7 @@ import { Link, useRouter } from "expo-router"
 import { AppBskyActorDefs } from "@atproto/api"
 import { useTheme } from "@react-navigation/native"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { CastleIcon } from "lucide-react-native"
+import { CastleIcon, KeyRoundIcon } from "lucide-react-native"
 
 import { Button } from "#/components/button"
 import { EmptyState } from "#/components/empty-state"
@@ -127,6 +127,13 @@ function AccountCard({
             {profile.handle}
           </Text>
           {isResuming && <ActivityIndicator size="small" />}
+          {account.localKeys.length > 0 && (
+            <View
+              style={[styles.badge, { backgroundColor: theme.colors.primary }]}
+            >
+              <KeyRoundIcon color="white" size={14} />
+            </View>
+          )}
         </View>
       ) : (
         <View
@@ -182,23 +189,10 @@ const styles = StyleSheet.create({
     fontWeight: 500,
     flex: 1,
   },
-  key: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 6,
-    borderCurve: "continuous",
-  },
   badge: {
     borderRadius: 999,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderCurve: "continuous",
-  },
-  badgeText: {
-    color: "white",
-    fontWeight: 500,
-    fontSize: 12,
-    lineHeight: 14,
   },
 })
