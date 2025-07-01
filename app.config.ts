@@ -30,6 +30,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
+    "expo-font",
+    "expo-web-browser",
     [
       "expo-router",
       {
@@ -56,15 +58,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           "Allow Demesne to access your Face ID biometric data.",
       },
     ],
-        [
+    [
       "react-native-edge-to-edge",
       {
-        "android": {
-          "parentTheme": "Default",
-          "enforceNavigationBarContrast": false
-        }
-      }
-    ]
+        android: {
+          parentTheme: "Default",
+          enforceNavigationBarContrast: false,
+        },
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
