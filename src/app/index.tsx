@@ -4,7 +4,6 @@ import { Image } from "expo-image"
 import { Link, useRouter } from "expo-router"
 import { AppBskyActorDefs } from "@atproto/api"
 import { useTheme } from "@react-navigation/native"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { CastleIcon, KeyRoundIcon } from "lucide-react-native"
 
 import { Button } from "#/components/button"
@@ -16,21 +15,11 @@ import {
   useRemoveAccount,
   useResumeSession,
 } from "#/lib/accounts"
-import { showActionSheet } from "#/lib/action-sheet"
-import { publicAgent } from "#/lib/agent"
+import { useAccountProfilesQuery } from "#/lib/queries"
 
 export default function IndexScreen() {
   const accounts = useAccounts()
-
-  const dids = accounts?.map((x) => x.did) ?? []
-  const { data: profiles } = useQuery({
-    queryKey: ["get-profiles", dids],
-    queryFn: async () => {
-      const res = await publicAgent.getProfiles({ actors: dids })
-      return res.data
-    },
-    placeholderData: keepPreviousData,
-  })
+  const { data: profiles } = useAccountProfilesQuery()
 
   return (
     <ScrollView>
@@ -85,70 +74,74 @@ function AccountCard({
   const [isResuming, setIsResuming] = useState(false)
 
   return (
-    <Pressable
+    <Link
+      href={`/account/${account.did}`}
       style={[styles.card, { backgroundColor: theme.colors.card }]}
-      onPress={async () => {
-        if (account.agent) {
-          router.navigate(`/account/${account.did}/manage-keys`)
-        } else {
-          setIsResuming(true)
-          try {
-            await resumeSession(account.did)
-            router.navigate(`/account/${account.did}/manage-keys`)
-          } catch (err) {
-            console.error(err)
-            router.navigate(
-              profile ? `/login?handle=${profile.handle}` : "/login",
-            )
-          } finally {
-            setIsResuming(false)
-          }
-        }
-      }}
-      onLongPress={async () => {
-        if (
-          await showActionSheet({
-            options: [
-              {
-                item: "Remove account",
-                destructive: true,
-              },
-            ],
-          })
-        ) {
-          removeAccount(account.did)
-        }
-      }}
+      asChild
     >
-      {profile ? (
-        <View style={styles.profileRow}>
-          <Image style={styles.avi} source={profile.avatar} />
-          <Text style={styles.handle} numberOfLines={1}>
-            {profile.handle}
-          </Text>
-          {isResuming && <ActivityIndicator size="small" />}
-          {account.localKeys.length > 0 && (
-            <View
-              style={[styles.badge, { backgroundColor: theme.colors.primary }]}
-            >
-              <KeyRoundIcon color="white" size={14} />
-            </View>
-          )}
-        </View>
-      ) : (
-        <View
-          style={{
-            height: 16,
-            width: 150,
-            backgroundColor: theme.colors.background,
-            borderRadius: 4,
-            marginVertical: 2,
+      <Link.Trigger>
+        <Pressable
+          onPress={async (evt) => {
+            if (!account.agent) {
+              evt.preventDefault()
+              setIsResuming(true)
+              try {
+                await resumeSession(account.did)
+                router.navigate(`/account/${account.did}`)
+              } catch (err) {
+                console.error(err)
+                router.navigate(
+                  profile ? `/login?handle=${profile.handle}` : "/login",
+                )
+              } finally {
+                setIsResuming(false)
+              }
+            }
           }}
+        >
+          {profile ? (
+            <View style={styles.profileRow}>
+              <Image style={styles.avi} source={profile.avatar} />
+              <Text style={styles.handle} numberOfLines={1}>
+                {profile.handle}
+              </Text>
+              {isResuming && <ActivityIndicator size="small" />}
+              {account.localKeys.length > 0 && (
+                <View
+                  style={[
+                    styles.badge,
+                    { backgroundColor: theme.colors.primary },
+                  ]}
+                >
+                  <KeyRoundIcon color="white" size={14} />
+                </View>
+              )}
+            </View>
+          ) : (
+            <View
+              style={{
+                height: 16,
+                width: 150,
+                backgroundColor: theme.colors.background,
+                borderRadius: 4,
+                marginVertical: 2,
+              }}
+            />
+          )}
+          <View style={[styles.line, { borderColor: theme.colors.border }]} />
+          <Text color="secondary">{account.did}</Text>
+        </Pressable>
+      </Link.Trigger>
+      <Link.Menu>
+        <Link.MenuAction
+          title="Remove account"
+          onPress={() => removeAccount(account.did)}
+          icon="trash"
+          destructive
+          disabled={isResuming}
         />
-      )}
-      <View style={[styles.line, { borderColor: theme.colors.border }]} />
-      <Text color="secondary">{account.did}</Text>
-    </Pressable>
+      </Link.Menu>
+    </Link>
   )
 }
 

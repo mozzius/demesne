@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
 } from "react"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import { Agent, CredentialSession } from "@atproto/api"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -213,4 +214,22 @@ export function useRemoveAccount() {
 
 export function useSaveKey() {
   return use(SaveKeyContext)
+}
+
+/**
+ * Provides the current account based on the path params
+ */
+export function useAccount() {
+  const router = useRouter()
+  const { did } = useLocalSearchParams<{ did: string }>()
+  const accounts = useAccounts()
+
+  const account = accounts?.find((acc) => acc.did === did)
+
+  if (!account || !account.agent) {
+    router.dismissAll()
+  }
+
+  // TODO: figure out a typesafe way to do this
+  return account as Required<Account>
 }

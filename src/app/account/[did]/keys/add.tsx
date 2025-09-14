@@ -9,13 +9,11 @@ import base64 from "base64-js"
 import { Button } from "#/components/button"
 import { InputGroup, TextField } from "#/components/text-field"
 import { ScrollView, Text } from "#/components/views"
-import { useSaveKey } from "#/lib/accounts"
+import { useAccount, useSaveKey } from "#/lib/accounts"
 import { useIdentityQuery } from "#/lib/agent"
 
-import { useAgent } from "./_layout"
-
 export default function AddKeyScreen() {
-  const agent = useAgent()
+  const { agent } = useAccount()
   const router = useRouter()
   const [token, setToken] = useState("")
   const queryClient = useQueryClient()

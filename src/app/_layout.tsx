@@ -29,12 +29,19 @@ export default function RootLayout() {
             <Stack.Screen
               name="index"
               options={{
-                title: "My Accounts",
+                title: "My accounts",
                 ...coolLargeTitleEffect,
               }}
             />
             <Stack.Screen
-              name="account/[did]"
+              name="account/[did]/index"
+              options={{
+                title: "",
+                ...coolLargeTitleEffect,
+              }}
+            />
+            <Stack.Screen
+              name="account/[did]/keys"
               options={{
                 headerShown: false,
                 presentation: "modal",
