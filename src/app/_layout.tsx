@@ -41,6 +41,13 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen
+              name="account/[did]/backup"
+              options={{
+                title: "Backups",
+                ...coolLargeTitleEffect,
+              }}
+            />
+            <Stack.Screen
               name="account/[did]/keys"
               options={{
                 headerShown: false,

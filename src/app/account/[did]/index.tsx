@@ -121,11 +121,7 @@ export default function AccountScreen() {
             </View>
           </Link>
           <Link
-            href={`/account/${did}`}
-            onPress={(evt) => {
-              evt.preventDefault()
-              Alert.alert("Coming soon!")
-            }}
+            href={`/account/${did}/backup`}
             style={[
               styles.card,
               { backgroundColor: theme.dark ? "#7e22ce" : "#a855f7" },
