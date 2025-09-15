@@ -30,7 +30,12 @@ export type Account = {
 
 const AccountContext = createContext<Account[] | undefined>(undefined)
 const CreateSessionContext = createContext<
-  (service: URL, identifier: string, password: string) => Promise<void>
+  (
+    service: URL,
+    identifier: string,
+    password: string,
+    authFactorToken?: string,
+  ) => Promise<void>
 >(() => Promise.resolve())
 const ResumeSessionContext = createContext<(did: string) => Promise<void>>(() =>
   Promise.resolve(),
@@ -70,13 +75,19 @@ export function AccountProvider({ children }: { children?: React.ReactNode }) {
   }, [accounts, agents])
 
   const createSession = useCallback(
-    async (service: URL, identifier: string, password: string) => {
+    async (
+      service: URL,
+      identifier: string,
+      password: string,
+      authFactorToken?: string,
+    ) => {
       if (!accounts) throw new Error("account data not yet loaded")
 
       const session = new CredentialSession(service)
       const res = await session.login({
         identifier,
         password,
+        authFactorToken,
       })
       if (!res.success) throw new Error("Sign in failed")
 

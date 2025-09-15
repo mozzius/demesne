@@ -38,6 +38,7 @@ export default function LoginScreen() {
   const theme = useTheme()
   const [identifier, setIdentifier] = useState(handle ?? "")
   const [password, setPassword] = useState("")
+  const [mfaCode, setMfaCode] = useState("")
   const frame = useSafeAreaFrame()
   const insets = useSafeAreaInsets()
   const ref = useRef<TextInput>(null)
@@ -60,11 +61,16 @@ export default function LoginScreen() {
   const {
     isPending: isLoginPending,
     mutate: loginMutate,
-    isError: isLoginError,
+    error: loginError,
   } = useMutation({
     mutationKey: ["login", identifier, password],
     mutationFn: async ({ pds }: { pds: string }) => {
-      return await login(new URL(pds), identifier, password)
+      return await login(
+        new URL(pds),
+        identifier,
+        password,
+        mfaCode ? mfaCode.trim() : undefined,
+      )
     },
     onSuccess: () => {
       router.dismiss()
@@ -140,22 +146,48 @@ export default function LoginScreen() {
                     returnKeyType="done"
                   />
                 </Animated.View>
-                {isLoginError && (
-                  <Animated.View
-                    layout={LinearTransition}
-                    entering={FadeIn}
-                    exiting={FadeOut}
-                    style={[
-                      styles.handleResolutionCard,
-                      { backgroundColor: theme.colors.notification },
-                    ]}
-                  >
-                    <XIcon color="white" size={20} />
-                    <Text color="white" style={styles.handleResolutionText}>
-                      Could not log you in. Wrong password?
-                    </Text>
-                  </Animated.View>
-                )}
+                {!!loginError &&
+                  (loginError.message.includes(
+                    "A sign in code has been sent to your email address",
+                  ) ? (
+                    <Animated.View
+                      layout={LinearTransition}
+                      entering={FadeIn}
+                      exiting={FadeOut}
+                    >
+                      <TextField
+                        placeholder="Email 2FA code"
+                        autoComplete="one-time-code"
+                        autoCapitalize="none"
+                        autoFocus
+                        value={mfaCode}
+                        onChangeText={setMfaCode}
+                        autoCorrect={false}
+                        onSubmitEditing={() =>
+                          identity &&
+                          loginMutate({
+                            pds: identity.pds,
+                          })
+                        }
+                        returnKeyType="done"
+                      />
+                    </Animated.View>
+                  ) : (
+                    <Animated.View
+                      layout={LinearTransition}
+                      entering={FadeIn}
+                      exiting={FadeOut}
+                      style={[
+                        styles.handleResolutionCard,
+                        { backgroundColor: theme.colors.notification },
+                      ]}
+                    >
+                      <XIcon color="white" size={20} />
+                      <Text color="white" style={styles.handleResolutionText}>
+                        Could not log you in. Wrong password?
+                      </Text>
+                    </Animated.View>
+                  ))}
               </InputGroup>
               <View>
                 <Button
