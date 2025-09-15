@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 12,
   },

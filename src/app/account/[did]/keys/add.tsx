@@ -85,7 +85,7 @@ export default function AddKeyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 4,
     paddingBottom: 150,
     gap: 12,

@@ -269,7 +269,7 @@ function useDebouncedValue<T>(val: T, delayMs: number): T {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
     justifyContent: "space-between",
