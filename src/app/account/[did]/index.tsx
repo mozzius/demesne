@@ -1,7 +1,6 @@
 import { Fragment, useMemo, useState } from "react"
 import {
   ActivityIndicator,
-  Alert,
   RefreshControl,
   StyleSheet,
   View,
