@@ -6,7 +6,13 @@ import {
   StyleSheet,
   View,
 } from "react-native"
-import { Directory, File, FileInfo, Paths } from "expo-file-system"
+import {
+  Directory,
+  DirectoryInfo,
+  File,
+  FileInfo,
+  Paths,
+} from "expo-file-system"
 import { useLocales } from "expo-localization"
 import { CredentialSession } from "@atproto/api"
 import { useTheme } from "@react-navigation/native"
@@ -20,8 +26,6 @@ import { useAccount } from "#/lib/accounts"
 import { useActionSheet } from "#/lib/action-sheet"
 
 export default function BackupScreen() {
-  const theme = useTheme()
-  const [ref, showActionSheet] = useActionSheet()
   const { did, agent } = useAccount()
 
   const { data: backups, refetch } = useQuery({
@@ -90,34 +94,12 @@ export default function BackupScreen() {
                 loading={isPending}
               />
               {backups.map((backup) => (
-                <Pressable
-                  ref={ref}
+                <BackupCard
                   key={backup.file.uri}
-                  style={[styles.card, { backgroundColor: theme.colors.card }]}
-                  onPress={() =>
-                    Share.share({ url: backup.file.uri, title: "repo.car" })
-                  }
-                  onLongPress={async () => {
-                    const action = await showActionSheet({
-                      options: [
-                        { item: "Delete backup", destructive: true },
-                      ] as const,
-                    })
-                    if (action?.item === "Delete backup") {
-                      backup.file.delete()
-                      refetch()
-                    }
-                  }}
-                >
-                  <Text style={{ fontWeight: 500 }}>{backup.file.name}</Text>
-                  {typeof backup.file.size === "number" && (
-                    <Text color="secondary">
-                      {formatter.format(
-                        Math.round(backup.file.size / (1000 * 1000)),
-                      )}
-                    </Text>
-                  )}
-                </Pressable>
+                  backup={backup}
+                  refetch={refetch}
+                  formatter={formatter}
+                />
               ))}
             </>
           )}
@@ -128,6 +110,44 @@ export default function BackupScreen() {
         </View>
       )}
     </ScrollView>
+  )
+}
+
+function BackupCard({
+  backup,
+  refetch,
+  formatter,
+}: {
+  backup: { file: File | Directory; info: FileInfo | DirectoryInfo }
+  refetch: () => void
+  formatter: Intl.NumberFormat
+}) {
+  const theme = useTheme()
+  const [ref, showActionSheet] = useActionSheet()
+
+  return (
+    <Pressable
+      ref={ref}
+      key={backup.file.uri}
+      style={[styles.card, { backgroundColor: theme.colors.card }]}
+      onPress={() => Share.share({ url: backup.file.uri, title: "repo.car" })}
+      onLongPress={async () => {
+        const action = await showActionSheet({
+          options: [{ item: "Delete backup", destructive: true }] as const,
+        })
+        if (action?.item === "Delete backup") {
+          backup.file.delete()
+          refetch()
+        }
+      }}
+    >
+      <Text style={{ fontWeight: 500 }}>{backup.file.name}</Text>
+      {typeof backup.file.size === "number" && (
+        <Text color="secondary">
+          {formatter.format(Math.round(backup.file.size / (1000 * 1000)))}
+        </Text>
+      )}
+    </Pressable>
   )
 }
 
