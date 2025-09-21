@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native"
+import { KeyboardAvoidingView } from "react-native-keyboard-controller"
 import Animated, {
   FadeIn,
   FadeOut,
@@ -88,7 +88,6 @@ export default function LoginScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* todo: use rnkc for smooth animation */}
         <KeyboardAvoidingView
           behavior="padding"
           style={{ flex: 1 }}

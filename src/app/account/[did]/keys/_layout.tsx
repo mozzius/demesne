@@ -3,6 +3,7 @@ import { SystemBars } from "react-native-edge-to-edge"
 import { Stack } from "expo-router"
 
 import { coolTitleEffect } from "#/components/header"
+import { isIOS26 } from "#/lib/versions"
 
 export default function KeysLayout() {
   return (
@@ -20,8 +21,9 @@ export default function KeysLayout() {
           options={{
             title: "Add rotation key",
             presentation: "formSheet",
-            sheetAllowedDetents: [0.5],
+            sheetAllowedDetents: "fitToContents",
             sheetGrabberVisible: true,
+            contentStyle: isIOS26 ? { backgroundColor: "transparent" } : {},
           }}
         />
       </Stack>

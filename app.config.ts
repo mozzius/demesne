@@ -19,6 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     edgeToEdgeEnabled: true,
+    package: "dev.mozzius.demesne",
     adaptiveIcon: {
       foregroundImage: "./assets/images/demesne-nobg.png",
       backgroundColor: "#4DA5C1",

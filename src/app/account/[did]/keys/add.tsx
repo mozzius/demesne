@@ -11,6 +11,7 @@ import { InputGroup, TextField } from "#/components/text-field"
 import { ScrollView, Text } from "#/components/views"
 import { useAccount, useSaveKey } from "#/lib/accounts"
 import { useIdentityQuery } from "#/lib/agent"
+import { isIOS26 } from "#/lib/versions"
 
 export default function AddKeyScreen() {
   const { agent } = useAccount()
@@ -59,7 +60,7 @@ export default function AddKeyScreen() {
   })
 
   return (
-    <ScrollView>
+    <ScrollView keyboardShouldPersistTaps="handled">
       <View style={styles.container}>
         <Text color="secondary" style={styles.info}>
           A code has been sent to your email. Enter it here.
@@ -69,6 +70,7 @@ export default function AddKeyScreen() {
             placeholder="Email token"
             value={token}
             onChangeText={setToken}
+            autoFocus
           />
         </InputGroup>
         <Button
@@ -87,7 +89,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 150,
+    paddingBottom: 75,
     gap: 12,
   },
   info: {

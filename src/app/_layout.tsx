@@ -1,6 +1,7 @@
 import "react-native-get-random-values"
 
 import { useColorScheme } from "react-native"
+import { KeyboardProvider } from "react-native-keyboard-controller"
 import { Stack } from "expo-router"
 import {
   DarkTheme,
@@ -11,6 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { coolLargeTitleEffect, coolTitleEffect } from "#/components/header"
 import { AccountProvider } from "#/lib/accounts"
+import { isIOS26 } from "#/lib/versions"
 
 export const unstable_settings = {
   initialRouteName: "index",
@@ -24,46 +26,52 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
       <QueryClientProvider client={queryClient}>
-        <AccountProvider>
-          <Stack>
-            <Stack.Screen
-              name="index"
-              options={{
-                title: "My accounts",
-                ...coolLargeTitleEffect,
+        <KeyboardProvider>
+          <AccountProvider>
+            <Stack
+              screenOptions={{
+                headerBackButtonDisplayMode: isIOS26 ? "minimal" : "default",
               }}
-            />
-            <Stack.Screen
-              name="account/[did]/index"
-              options={{
-                title: "",
-                ...coolLargeTitleEffect,
-              }}
-            />
-            <Stack.Screen
-              name="account/[did]/backup"
-              options={{
-                title: "Backups",
-                ...coolLargeTitleEffect,
-              }}
-            />
-            <Stack.Screen
-              name="account/[did]/keys"
-              options={{
-                headerShown: false,
-                presentation: "modal",
-              }}
-            />
-            <Stack.Screen
-              name="login"
-              options={{
-                title: "Sign in",
-                presentation: "modal",
-                ...coolTitleEffect,
-              }}
-            />
-          </Stack>
-        </AccountProvider>
+            >
+              <Stack.Screen
+                name="index"
+                options={{
+                  title: "My accounts",
+                  ...coolLargeTitleEffect,
+                }}
+              />
+              <Stack.Screen
+                name="account/[did]/index"
+                options={{
+                  title: "",
+                  ...coolLargeTitleEffect,
+                }}
+              />
+              <Stack.Screen
+                name="account/[did]/backup"
+                options={{
+                  title: "Backups",
+                  ...coolLargeTitleEffect,
+                }}
+              />
+              <Stack.Screen
+                name="account/[did]/keys"
+                options={{
+                  headerShown: false,
+                  presentation: "modal",
+                }}
+              />
+              <Stack.Screen
+                name="login"
+                options={{
+                  title: "Sign in",
+                  presentation: "modal",
+                  ...coolTitleEffect,
+                }}
+              />
+            </Stack>
+          </AccountProvider>
+        </KeyboardProvider>
       </QueryClientProvider>
     </ThemeProvider>
   )
