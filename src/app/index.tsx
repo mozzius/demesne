@@ -74,11 +74,7 @@ function AccountCard({
   const [isResuming, setIsResuming] = useState(false)
 
   return (
-    <Link
-      href={`/account/${account.did}`}
-      style={[styles.card, { backgroundColor: theme.colors.card }]}
-      asChild
-    >
+    <Link href={`/account/${account.did}`} asChild>
       <Link.Trigger>
         <Pressable
           onPress={async (evt) => {
@@ -99,37 +95,39 @@ function AccountCard({
             }
           }}
         >
-          {profile ? (
-            <View style={styles.profileRow}>
-              <Image style={styles.avi} source={profile.avatar} />
-              <Text style={styles.handle} numberOfLines={1}>
-                {profile.handle}
-              </Text>
-              {isResuming && <ActivityIndicator size="small" />}
-              {account.localKeys.length > 0 && (
-                <View
-                  style={[
-                    styles.badge,
-                    { backgroundColor: theme.colors.primary },
-                  ]}
-                >
-                  <KeyRoundIcon color="white" size={14} />
-                </View>
-              )}
-            </View>
-          ) : (
-            <View
-              style={{
-                height: 16,
-                width: 150,
-                backgroundColor: theme.colors.background,
-                borderRadius: 4,
-                marginVertical: 2,
-              }}
-            />
-          )}
-          <View style={[styles.line, { borderColor: theme.colors.border }]} />
-          <Text color="secondary">{account.did}</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+            {profile ? (
+              <View style={styles.profileRow}>
+                <Image style={styles.avi} source={profile.avatar} />
+                <Text style={styles.handle} numberOfLines={1}>
+                  {profile.handle}
+                </Text>
+                {isResuming && <ActivityIndicator size="small" />}
+                {account.localKeys.length > 0 && (
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: theme.colors.primary },
+                    ]}
+                  >
+                    <KeyRoundIcon color="white" size={14} />
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View
+                style={{
+                  height: 16,
+                  width: 150,
+                  backgroundColor: theme.colors.background,
+                  borderRadius: 4,
+                  marginVertical: 2,
+                }}
+              />
+            )}
+            <View style={[styles.line, { borderColor: theme.colors.border }]} />
+            <Text color="secondary">{account.did}</Text>
+          </View>
         </Pressable>
       </Link.Trigger>
       <Link.Menu>
