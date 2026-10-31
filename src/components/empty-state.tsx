@@ -1,61 +1,36 @@
-import { StyleSheet, View } from "react-native"
-import { type LucideIcon } from "lucide-react-native"
-
-import { Text, useTextColor } from "#/components/views"
+import { Column, Host, Icon, Text, type IconName } from "@expo/ui"
 
 export function EmptyState({
-  icon: Icon,
-  text = "Nothing here",
-  subText,
+  icon,
+  title,
+  subtitle,
   children,
 }: {
-  icon: LucideIcon
-  text: string
-  subText?: string
+  icon: IconName
+  title: string
+  subtitle?: string
   children?: React.ReactNode
 }) {
-  const color = useTextColor("tertiary")
   return (
-    <View style={styles.container}>
-      <Icon size={64} color={color} />
-      <View style={styles.textContainer}>
-        <Text style={styles.text} color="primary">
-          {text}
-        </Text>
-        {subText && (
-          <Text style={styles.subText} color="secondary">
-            {subText}
-          </Text>
-        )}
-      </View>
-      {children}
-    </View>
+    <Host style={{ flex: 1 }}>
+      <Column
+        alignment="center"
+        spacing={16}
+        style={{ paddingHorizontal: 32, paddingTop: 160 }}
+      >
+        <Icon name={icon} size={56} color="gray" />
+        <Column alignment="center" spacing={6}>
+          <Text textStyle={{ fontSize: 22, fontWeight: "bold" }}>{title}</Text>
+          {subtitle ? (
+            <Text
+              textStyle={{ fontSize: 16, color: "gray", textAlign: "center" }}
+            >
+              {subtitle}
+            </Text>
+          ) : null}
+        </Column>
+        {children}
+      </Column>
+    </Host>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 24,
-    paddingTop: "30%",
-  },
-  textContainer: {
-    maxWidth: 300,
-    textAlign: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  text: {
-    fontSize: 20,
-    fontWeight: "bold",
-    maxWidth: 300,
-    textAlign: "center",
-  },
-  subText: {
-    fontSize: 16,
-    maxWidth: 300,
-    textAlign: "center",
-  },
-})

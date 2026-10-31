@@ -1,99 +1,107 @@
 import { useState } from "react"
-import { StyleSheet, View } from "react-native"
-import { useLocalSearchParams, useRouter } from "expo-router"
-import * as SecureStore from "expo-secure-store"
+import { Alert, StyleSheet } from "react-native"
+import { useRouter } from "expo-router"
 import { Secp256k1Keypair } from "@atproto/crypto"
+import { FieldGroup, Host, Text, TextInput } from "@expo/ui"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import base64 from "base64-js"
 
-import { Button } from "#/components/button"
-import { InputGroup, TextField } from "#/components/text-field"
-import { ScrollView, Text } from "#/components/views"
-import { useAccount, useSaveKey } from "#/lib/accounts"
-import { useIdentityQuery } from "#/lib/agent"
-import { isIOS26 } from "#/lib/versions"
+import { ActionRow } from "#/components/rows"
+import {
+  useAccountActions,
+  WithCurrentAccount,
+  type SignedInAccount,
+} from "#/lib/accounts"
+import { storePrivateKey } from "#/lib/keys"
+import { useIdentityQuery } from "#/lib/plc"
 
 export default function AddKeyScreen() {
-  const { agent } = useAccount()
+  return (
+    <WithCurrentAccount>
+      {(account) => <AddKeyForm account={account} />}
+    </WithCurrentAccount>
+  )
+}
+
+function AddKeyForm({ account: { did, agent } }: { account: SignedInAccount }) {
   const router = useRouter()
-  const [token, setToken] = useState("")
   const queryClient = useQueryClient()
-  const { did } = useLocalSearchParams<{ did: string }>()
+  const { saveKey } = useAccountActions()
   const { data: identity } = useIdentityQuery(did)
-  const saveKey = useSaveKey()
+  const [token, setToken] = useState("")
 
-  const { mutate: createKey, isPending: isCreating } = useMutation({
+  const createKey = useMutation({
     mutationFn: async () => {
-      if (!agent) throw new Error("no agent")
-      if (!identity) throw new Error("no plcData")
-      if (!token) throw new Error("no token")
+      if (!identity) throw new Error("Identity not loaded yet")
 
-      const key = await Secp256k1Keypair.create({ exportable: true })
-      const pubkey = key.did()
-      const privkey = base64.fromByteArray(await key.export())
+      const keypair = await Secp256k1Keypair.create({ exportable: true })
+      const publicKey = keypair.did()
+      const privateKey = base64.fromByteArray(await keypair.export())
 
-      SecureStore.setItemAsync(pubkey.replace("did:key:", ""), privkey, {
-        requireAuthentication: !__DEV__,
-      })
+      // Make sure the private key is safely stored *before* it's added to
+      // the identity, so we can never end up with a key we don't have.
+      await storePrivateKey(publicKey, privateKey)
+      await saveKey(did, publicKey)
 
-      const rotationKeys = [pubkey, ...identity.plcData.rotationKeys]
-
-      const signedOp = await agent.com.atproto.identity.signPlcOperation({
-        rotationKeys,
+      const signed = await agent.com.atproto.identity.signPlcOperation({
+        rotationKeys: [publicKey, ...identity.plcData.rotationKeys],
         token: token.trim(),
       })
-
       await agent.com.atproto.identity.submitPlcOperation({
-        operation: signedOp.data.operation,
+        operation: signed.data.operation,
       })
-
-      return pubkey
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["identity"] })
+      await queryClient.invalidateQueries({ queryKey: ["audit", did] })
+      router.back()
     },
     onError: (err) => {
       console.error(err)
-    },
-    onSuccess: (key) => {
-      saveKey(did, key)
-      queryClient.invalidateQueries({ queryKey: ["identity"] })
-      router.dismiss()
+      Alert.alert("Could not add key", err.message)
     },
   })
 
+  const submit = () => {
+    if (token.trim() && identity && !createKey.isPending) createKey.mutate()
+  }
+
   return (
-    <ScrollView keyboardShouldPersistTaps="handled">
-      <View style={styles.container}>
-        <Text color="secondary" style={styles.info}>
-          A code has been sent to your email. Enter it here.
-        </Text>
-        <InputGroup>
-          <TextField
-            placeholder="Email token"
-            value={token}
-            onChangeText={setToken}
+    <Host style={styles.flex}>
+      <FieldGroup>
+        <FieldGroup.Section>
+          <TextInput
+            placeholder="Confirmation code"
+            autoComplete="one-time-code"
+            autoCapitalize="none"
+            autoCorrect={false}
             autoFocus
+            returnKeyType="go"
+            onChangeText={setToken}
+            onSubmitEditing={submit}
           />
-        </InputGroup>
-        <Button
-          title="Create new key"
-          disabled={!token || !identity}
-          onPress={() => createKey()}
-          loading={isCreating}
-        />
-      </View>
-    </ScrollView>
+          <FieldGroup.SectionFooter>
+            <Text>
+              Your PDS has emailed you a code to confirm this change. Enter it
+              here.
+            </Text>
+          </FieldGroup.SectionFooter>
+        </FieldGroup.Section>
+        <FieldGroup.Section>
+          <ActionRow
+            title="Create key"
+            onPress={submit}
+            disabled={!token.trim() || !identity}
+            loading={createKey.isPending}
+          />
+        </FieldGroup.Section>
+      </FieldGroup>
+    </Host>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 75,
-    gap: 12,
-  },
-  info: {
-    paddingHorizontal: 12,
-    textAlign: "center",
   },
 })
