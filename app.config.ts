@@ -1,4 +1,4 @@
-import { ConfigContext, ExpoConfig } from "expo/config"
+import type { ConfigContext, ExpoConfig } from "expo/config"
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -9,7 +9,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: "./assets/images/demesne.png",
   scheme: "demesne",
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
   ios: {
     bundleIdentifier: "dev.mozzius.demesne",
     supportsTablet: true,
@@ -18,7 +17,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    edgeToEdgeEnabled: true,
     package: "dev.mozzius.demesne",
     adaptiveIcon: {
       foregroundImage: "./assets/images/demesne-nobg.png",
@@ -31,8 +29,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
-    "expo-font",
-    "expo-web-browser",
     "expo-localization",
     [
       "expo-router",
@@ -57,16 +53,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         configureAndroidBackup: true,
         faceIDPermission:
-          "Allow Demesne to access your Face ID biometric data.",
-      },
-    ],
-    [
-      "react-native-edge-to-edge",
-      {
-        android: {
-          parentTheme: "Default",
-          enforceNavigationBarContrast: false,
-        },
+          "Allow Demesne to use Face ID to unlock your rotation keys.",
       },
     ],
   ],

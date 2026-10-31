@@ -1,182 +1,162 @@
 import { useMemo } from "react"
-import {
-  ActivityIndicator,
-  Pressable,
-  Share,
-  StyleSheet,
-  View,
-} from "react-native"
-import {
-  Directory,
-  DirectoryInfo,
-  File,
-  FileInfo,
-  Paths,
-} from "expo-file-system"
+import { ActivityIndicator, Alert, Share, StyleSheet, View } from "react-native"
+import { Directory, File, Paths } from "expo-file-system"
 import { useLocales } from "expo-localization"
-import { CredentialSession } from "@atproto/api"
-import { useTheme } from "@react-navigation/native"
+import { Button, FieldGroup, Host, ListItem, Text } from "@expo/ui"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { DatabaseIcon } from "lucide-react-native"
 
-import { Button } from "#/components/button"
 import { EmptyState } from "#/components/empty-state"
-import { ScrollView, Text } from "#/components/views"
-import { useAccount } from "#/lib/accounts"
-import { useActionSheet } from "#/lib/action-sheet"
+import { Icons } from "#/components/icons"
+import { ActionRow } from "#/components/rows"
+import { WithCurrentAccount, type SignedInAccount } from "#/lib/accounts"
 
 export default function BackupScreen() {
-  const { did, agent } = useAccount()
+  return (
+    <WithCurrentAccount>
+      {(account) => <Backups account={account} />}
+    </WithCurrentAccount>
+  )
+}
 
-  const { data: backups, refetch } = useQuery({
+function backupDirectory(did: string) {
+  return new Directory(Paths.document, did, "backups")
+}
+
+function Backups({
+  account: { did, serviceUrl },
+}: {
+  account: SignedInAccount
+}) {
+  const backups = useQuery({
     queryKey: ["backups", did],
     queryFn: () => {
-      const dir = new Directory(Paths.document, did, "backups")
-      if (!dir.exists) {
-        return []
-      }
-      const list = dir.list()
-      const listWithInfo = list.map((file) => ({ file, info: file.info() }))
-      listWithInfo.sort(sortByTime)
-      return listWithInfo
+      const dir = backupDirectory(did)
+      if (!dir.exists) return []
+      return dir
+        .list()
+        .filter((entry): entry is File => entry instanceof File)
+        .map((file) => ({ file, info: file.info() }))
+        .sort(
+          (a, b) =>
+            (b.info.creationTime ?? b.info.modificationTime ?? 0) -
+            (a.info.creationTime ?? a.info.modificationTime ?? 0),
+        )
     },
   })
 
-  const { mutate: downloadCar, isPending } = useMutation({
+  const createBackup = useMutation({
     mutationFn: async () => {
-      const dir = new Directory(Paths.document, did, "backups")
-      if (!dir.exists) {
-        dir.create({ intermediates: true, idempotent: true })
-      }
+      const dir = backupDirectory(did)
+      dir.create({ intermediates: true, idempotent: true })
 
-      const url = `${(agent.sessionManager as CredentialSession).serviceUrl}xrpc/com.atproto.sync.getRepo?did=${did}`
-      return await File.downloadFileAsync(
-        url,
-        new File(
-          Paths.document,
-          did,
-          "backups",
-          new Date().toISOString() + ".car",
-        ),
-      )
+      const url = new URL("/xrpc/com.atproto.sync.getRepo", serviceUrl)
+      url.searchParams.set("did", did)
+
+      const name = new Date().toISOString().replaceAll(":", "-") + ".car"
+      return await File.downloadFileAsync(url.toString(), new File(dir, name))
     },
-    onSettled: () => refetch(),
-    onError: (error) => console.error(error),
+    onSettled: () => backups.refetch(),
+    onError: (err) => {
+      console.error(err)
+      Alert.alert("Backup failed", err.message)
+    },
   })
 
   const [locale] = useLocales()
-  const formatter = useMemo(() => {
-    return new Intl.NumberFormat(locale.languageTag, {
-      notation: "compact",
-      style: "unit",
-      unit: "megabyte",
-      unitDisplay: "short",
-    })
-  }, [locale])
-
-  return (
-    <ScrollView>
-      {backups ? (
-        <View style={styles.container}>
-          {backups.length === 0 ? (
-            <EmptyState icon={DatabaseIcon} text="No backups yet">
-              <Button
-                title="Create a backup"
-                onPress={() => downloadCar()}
-                loading={isPending}
-              />
-            </EmptyState>
-          ) : (
-            <>
-              <Button
-                title="New backup"
-                onPress={() => downloadCar()}
-                loading={isPending}
-              />
-              {backups.map((backup) => (
-                <BackupCard
-                  key={backup.file.uri}
-                  backup={backup}
-                  refetch={refetch}
-                  formatter={formatter}
-                />
-              ))}
-            </>
-          )}
-        </View>
-      ) : (
-        <View style={styles.spinner}>
-          <ActivityIndicator />
-        </View>
-      )}
-    </ScrollView>
+  const formatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale?.languageTag, {
+        style: "unit",
+        unit: "megabyte",
+        unitDisplay: "short",
+        maximumFractionDigits: 1,
+      }),
+    [locale],
   )
-}
 
-function BackupCard({
-  backup,
-  refetch,
-  formatter,
-}: {
-  backup: { file: File | Directory; info: FileInfo | DirectoryInfo }
-  refetch: () => void
-  formatter: Intl.NumberFormat
-}) {
-  const theme = useTheme()
-  const [ref, showActionSheet] = useActionSheet()
+  if (!backups.data) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+      </View>
+    )
+  }
+
+  if (backups.data.length === 0) {
+    return (
+      <EmptyState
+        icon={Icons.database}
+        title="No backups yet"
+        subtitle="Download a copy of your repo to keep on this device"
+      >
+        <Button
+          label={createBackup.isPending ? "Backing up…" : "Create a backup"}
+          disabled={createBackup.isPending}
+          onPress={() => createBackup.mutate()}
+        />
+      </EmptyState>
+    )
+  }
+
+  const confirmDelete = (file: File) =>
+    Alert.alert("Delete backup?", file.name, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          file.delete()
+          void backups.refetch()
+        },
+      },
+    ])
+
+  const showOptions = (file: File) =>
+    Alert.alert(file.name, undefined, [
+      {
+        text: "Share",
+        onPress: () => Share.share({ url: file.uri, title: file.name }),
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => confirmDelete(file),
+      },
+      { text: "Cancel", style: "cancel" },
+    ])
 
   return (
-    <Pressable
-      ref={ref}
-      key={backup.file.uri}
-      style={[styles.card, { backgroundColor: theme.colors.card }]}
-      onPress={() => Share.share({ url: backup.file.uri, title: "repo.car" })}
-      onLongPress={async () => {
-        const action = await showActionSheet({
-          options: [{ item: "Delete backup", destructive: true }] as const,
-        })
-        if (action?.item === "Delete backup") {
-          backup.file.delete()
-          refetch()
-        }
-      }}
-    >
-      <Text style={{ fontWeight: 500 }}>{backup.file.name}</Text>
-      {typeof backup.file.size === "number" && (
-        <Text color="secondary">
-          {formatter.format(Math.round(backup.file.size / (1000 * 1000)))}
-        </Text>
-      )}
-    </Pressable>
-  )
-}
-
-function sortByTime(a: { info: FileInfo }, b: { info: FileInfo }) {
-  return (
-    (b.info.creationTime ?? b.info.modificationTime ?? 0) -
-    (a.info.creationTime ?? a.info.modificationTime ?? 0)
+    <Host style={styles.flex}>
+      <FieldGroup>
+        <FieldGroup.Section>
+          <ActionRow
+            title="New backup"
+            onPress={() => createBackup.mutate()}
+            loading={createBackup.isPending}
+          />
+        </FieldGroup.Section>
+        <FieldGroup.Section title="Saved backups">
+          {backups.data.map(({ file }) => (
+            <ListItem key={file.uri} onPress={() => showOptions(file)}>
+              <Text>{file.name}</Text>
+              <ListItem.Supporting>
+                {formatter.format(file.size / 1_000_000)}
+              </ListItem.Supporting>
+            </ListItem>
+          ))}
+        </FieldGroup.Section>
+      </FieldGroup>
+    </Host>
   )
 }
 
 const styles = StyleSheet.create({
-  spinner: {
+  flex: {
     flex: 1,
-    paddingTop: 200,
-    alignContent: "center",
   },
-  container: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  card: {
-    padding: 12,
-    borderRadius: 12,
-    borderCurve: "continuous",
-    gap: 4,
-  },
-  line: {
-    width: "100%",
-    borderTopWidth: StyleSheet.hairlineWidth,
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 })

@@ -1,31 +1,34 @@
-import {
-  ActivityIndicator,
-  Alert,
-  Share,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native"
-import { Stack, useRouter } from "expo-router"
-import * as SecureStore from "expo-secure-store"
-import { useTheme } from "@react-navigation/native"
+import { ActivityIndicator, Alert, Share, StyleSheet, View } from "react-native"
+import { useRouter } from "expo-router"
+import { FieldGroup, Host, ListItem, Text } from "@expo/ui"
 import { useMutation, useQuery } from "@tanstack/react-query"
 
-import { Button } from "#/components/button"
-import { useSheetCloseButton } from "#/components/header-buttons"
-import { ScrollView, Text } from "#/components/views"
-import { useAccount } from "#/lib/accounts"
-import { useActionSheet } from "#/lib/action-sheet"
-import { useIdentityQuery } from "#/lib/agent"
+import { ActionRow, monospace } from "#/components/rows"
+import { SheetCloseButton } from "#/components/sheet-close-button"
+import { WithCurrentAccount, type SignedInAccount } from "#/lib/accounts"
+import { getPrivateKey } from "#/lib/keys"
+import { useIdentityQuery } from "#/lib/plc"
+
+/** The PLC spec allows at most 5 rotation keys. */
+const MAX_ROTATION_KEYS = 5
 
 export default function ManageKeysScreen() {
-  const { did, agent, localKeys } = useAccount()
-  const headerRight = useSheetCloseButton("Done", "bold")
-  const router = useRouter()
+  return (
+    <>
+      <SheetCloseButton placement="right" label="Done" />
+      <WithCurrentAccount>
+        {(account) => <KeyList account={account} />}
+      </WithCurrentAccount>
+    </>
+  )
+}
 
+function KeyList({ account }: { account: SignedInAccount }) {
+  const { did, agent, localKeys } = account
+  const router = useRouter()
   const { data: identity } = useIdentityQuery(did)
 
-  const { data: recommendedCredentials } = useQuery({
+  const { data: recommended } = useQuery({
     queryKey: ["recommended-did-creds", did],
     queryFn: async () => {
       const res =
@@ -34,169 +37,107 @@ export default function ManageKeysScreen() {
     },
   })
 
-  const { mutate: addKey, isPending: isAddingKey } = useMutation({
-    mutationFn: async () => {
-      await agent.com.atproto.identity.requestPlcOperationSignature()
-    },
+  const requestSignature = useMutation({
+    mutationFn: () => agent.com.atproto.identity.requestPlcOperationSignature(),
     onSuccess: () => router.push(`/account/${did}/keys/add`),
+    onError: (err) => Alert.alert("Could not request a code", err.message),
   })
 
+  if (!identity || !recommended) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+      </View>
+    )
+  }
+
+  const rotationKeys = identity.plcData.rotationKeys
+
   return (
-    <>
-      <Stack.Screen options={{ headerRight }} />
-      <ScrollView contentContainerStyle={styles.container}>
-        {identity && recommendedCredentials ? (
-          <>
-            {identity?.plcData.rotationKeys?.map((key, i) => (
-              <RotationKeyCard
-                key={key}
-                rotationKey={key}
-                index={i}
-                isLocalKey={localKeys.includes(key)}
-                isPDSKey={!!recommendedCredentials.rotationKeys?.includes(key)}
-              />
-            ))}
-            {identity && identity.plcData.rotationKeys.length < 10 && (
-              <Button
-                title="Add additional key"
-                onPress={() => addKey()}
-                loading={isAddingKey}
-              />
-            )}
-          </>
-        ) : (
-          <View style={styles.spinner}>
-            <ActivityIndicator size="large" />
-          </View>
+    <Host style={styles.flex}>
+      <FieldGroup>
+        {rotationKeys.map((key, i) => {
+          const isLocal = localKeys.includes(key)
+          const isPds = !!recommended.rotationKeys?.includes(key)
+          return (
+            <FieldGroup.Section
+              key={key}
+              title={i === 0 ? "Key #1 (highest priority)" : `Key #${i + 1}`}
+            >
+              <ListItem>
+                <Text textStyle={{ fontSize: 13, fontFamily: monospace }}>
+                  {key}
+                </Text>
+                {(isLocal || isPds) && (
+                  <ListItem.Supporting>
+                    {isLocal ? "Stored on this device" : "Managed by your PDS"}
+                  </ListItem.Supporting>
+                )}
+              </ListItem>
+              {isLocal && (
+                <ActionRow
+                  title="Export private key"
+                  onPress={() => exportPrivateKey(key)}
+                />
+              )}
+            </FieldGroup.Section>
+          )
+        })}
+        {rotationKeys.length < MAX_ROTATION_KEYS && (
+          <FieldGroup.Section>
+            <ActionRow
+              title="Add a rotation key"
+              onPress={() => requestSignature.mutate()}
+              loading={requestSignature.isPending}
+            />
+            <FieldGroup.SectionFooter>
+              <Text>
+                Creates a new key on this device and adds it to your identity
+                with top priority, so you can recover your account even if your
+                PDS disappears. Your PDS will email you a confirmation code.
+              </Text>
+            </FieldGroup.SectionFooter>
+          </FieldGroup.Section>
         )}
-      </ScrollView>
-    </>
+      </FieldGroup>
+    </Host>
   )
 }
 
-function RotationKeyCard({
-  rotationKey: key,
-  index,
-  isLocalKey,
-  isPDSKey,
-}: {
-  rotationKey: string
-  index: number
-  isLocalKey: boolean
-  isPDSKey: boolean
-}) {
-  const theme = useTheme()
-  const [ref, showActionSheet] = useActionSheet()
-
-  return (
-    <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
-      <View style={styles.row}>
-        <Text style={styles.bold}>Key #{index + 1}</Text>
-
-        {isLocalKey && (
-          <TouchableOpacity
-            ref={ref}
-            onPress={async () => {
-              const choice = await showActionSheet({
-                options: [{ item: "Retrieve key" }],
-              })
-              if (choice?.item === "Retrieve key") {
-                Alert.alert(
-                  "Be careful with your keys",
-                  "You are about to retrieve your private key. This can be really dangerous if anyone else gets their hands on it! Make sure you know what you're doing.",
-                  [
-                    {
-                      text: "Continue",
-                      style: "destructive",
-                      onPress: () => {
-                        const priv = SecureStore.getItem(
-                          key.replace("did:key:", ""),
-                          {
-                            requireAuthentication: !__DEV__,
-                          },
-                        )
-                        if (priv) {
-                          Share.share({ message: priv })
-                        } else {
-                          Alert.alert("Cannot find key!")
-                        }
-                      },
-                    },
-                    {
-                      text: "Cancel",
-                      style: "cancel",
-                    },
-                  ],
-                )
-              }
-            }}
-          >
-            <View
-              style={[styles.badge, { backgroundColor: theme.colors.primary }]}
-            >
-              <Text style={styles.badgeText} color="white">
-                Stored on device
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        {isPDSKey && (
-          <View style={[styles.badge, { borderColor: theme.colors.border }]}>
-            <Text style={styles.badgeText}>PDS key</Text>
-          </View>
-        )}
-      </View>
-      <View style={[styles.key, { borderColor: theme.colors.border }]}>
-        <Text>{key}</Text>
-      </View>
-    </View>
+function exportPrivateKey(key: string) {
+  Alert.alert(
+    "Be careful with your keys",
+    "Anyone with this private key can take control of your identity. Only export it if you know what you're doing.",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Export",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const privateKey = await getPrivateKey(key)
+            if (privateKey) {
+              await Share.share({ message: privateKey })
+            } else {
+              Alert.alert("Key not found on this device")
+            }
+          } catch (err) {
+            console.error(err)
+            Alert.alert("Could not read the key")
+          }
+        },
+      },
+    ],
   )
 }
 
 const styles = StyleSheet.create({
-  spinner: {
+  flex: {
     flex: 1,
-    paddingTop: 200,
+  },
+  centered: {
+    flex: 1,
     alignItems: "center",
-  },
-  container: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 12,
-  },
-  card: {
-    padding: 12,
-    borderRadius: 12,
-    borderCurve: "continuous",
-    gap: 8,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 2,
-  },
-  bold: {
-    fontWeight: 500,
-  },
-  key: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 6,
-    borderCurve: "continuous",
-  },
-  badge: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderCurve: "continuous",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "transparent",
-  },
-  badgeText: {
-    fontWeight: 500,
-    fontSize: 12,
-    lineHeight: 14,
+    justifyContent: "center",
   },
 })
